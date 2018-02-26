@@ -13,10 +13,28 @@ import yaml
 import math
 import numpy as np
 
+# The k-d tree library from https://github.com/stefankoegl/kdtree
+import kdtree
+
 STATE_COUNT_THRESHOLD = 3
 
 DEBUG_LEVEL = 2  # 0 no Messages, 1 Important Stuff, 2 Everything
 USE_GROUND_TRUTH = True
+
+# This is a k-d tree item containing containing waypoint x, y coordinates as keys and waypoint indexes as data
+class Item(object):
+    def __init__(self, x, y, data):
+        self.coords = (x, y)
+        self.data = data
+
+    def __len__(self):
+        return len(self.coords)
+
+    def __getitem__(self, i):
+        return self.coords[i]
+
+    def __repr__(self):
+        return 'Item({}, {}, {})'.format(self.coords[0], self.coords[1], self.data)
 
 class TLDetector(object):
     def __init__(self):
@@ -28,6 +46,9 @@ class TLDetector(object):
         self.camera_image = None
         self.lights = []
         self.light_wp_prev = None
+
+        # For the kdtree containing waypoint coords and indexes
+        self.waypoints_kdtree = None
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -139,6 +160,39 @@ class TLDetector(object):
 
         return nwp_index
 
+    def get_closest_waypoint2(self, pose):
+        """Identifies the closest path waypoint to the given position
+            https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
+        Args:
+            pose (Pose): position to match a waypoint to
+
+        Returns:
+            int: index of the closest waypoint in self.waypoints
+
+        """
+        # Test for using k-d tree for quick access to nearest waypoint
+        if self.waypoints_kdtree is None:
+            rospy.logwarn("TL Detector - Load waypoints into k-d tree")
+            wp_item_list = []
+            for i, wp in enumerate(self.waypoints.waypoints):
+                x = wp.pose.pose.position.x
+                y = wp.pose.pose.position.y
+                wp_item_list.append(Item(x, y, i))
+            self.waypoints_kdtree = kdtree.create(wp_item_list)
+            if DEBUG_LEVEL >= 1:
+                rospy.logwarn("TL Detector - Begin sample waypoints in k-d tree")
+                for i, wp in enumerate(self.waypoints.waypoints):
+                    x = wp.pose.pose.position.x
+                    y = wp.pose.pose.position.y
+                    wp_kdtree, dist = self.waypoints_kdtree.search_nn([x, y])
+                    rospy.logwarn("TL Detector wp: {0:d} pos: {1:.3f},{2:.3f}".format(i, x, y))
+                    rospy.logwarn("TL Detector kdtree: {0:d} pos: {1:.3f},{2:.3f}".format(wp_kdtree.data.data, wp_kdtree.data.coords[0], wp_kdtree.data.coords[1]))
+                    if i > 3: break
+                rospy.logwarn("TL Detector - End sample waypoints in k-d tree")
+
+        wp_kdtree, dist = self.waypoints_kdtree.search_nn([pose.position.x, pose.position.y])
+        return wp_kdtree.data.data
+
     def get_light_state(self, light):
         """Determines the current color of the traffic light
 
@@ -176,6 +230,7 @@ class TLDetector(object):
         stop_line_positions = self.config['stop_line_positions']
         if (self.pose and self.waypoints):
             car_position = self.get_closest_waypoint(self.pose.pose)
+            car_position = self.get_closest_waypoint2(self.pose.pose)
 
             # Find the waypoint for the next closest road stop line
             for i in range(len(stop_line_positions)):
@@ -183,6 +238,7 @@ class TLDetector(object):
                 stop_line.position.x = stop_line_positions[i][0]
                 stop_line.position.y = stop_line_positions[i][1]
                 light_wp = self.get_closest_waypoint(stop_line)
+                light_wp = self.get_closest_waypoint2(stop_line)
                 if light_wp > car_position:
                     # Road stop line and light coming ahead
                     if light_wp != self.light_wp_prev:

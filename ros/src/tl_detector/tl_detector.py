@@ -16,6 +16,9 @@ import numpy as np
 # The k-d tree library from https://github.com/stefankoegl/kdtree
 import kdtree
 
+# Import the Python profiling package for performance timing
+import cProfile
+
 STATE_COUNT_THRESHOLD = 3
 
 DEBUG_LEVEL = 2  # 0 no Messages, 1 Important Stuff, 2 Everything
@@ -237,7 +240,9 @@ class TLDetector(object):
                 stop_line = Pose()
                 stop_line.position.x = stop_line_positions[i][0]
                 stop_line.position.y = stop_line_positions[i][1]
+                cProfile.runctx('self.get_closest_waypoint(stop_line)', globals(), locals(), 'get_closest_waypoint.log')
                 light_wp = self.get_closest_waypoint(stop_line)
+                cProfile.runctx('self.get_closest_waypoint2(stop_line)', globals(), locals(), 'get_closest_waypoint2.log')
                 light_wp = self.get_closest_waypoint2(stop_line)
                 if light_wp > car_position:
                     # Road stop line and light coming ahead

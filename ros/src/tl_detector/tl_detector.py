@@ -21,7 +21,7 @@ import cProfile
 
 STATE_COUNT_THRESHOLD = 3
 
-DEBUG_LEVEL = 2  # 0 no Messages, 1 Important Stuff, 2 Everything
+DEBUG_LEVEL = 1  # 0 no Messages, 1 Important Stuff, 2 Everything
 USE_GROUND_TRUTH = True
 
 # This is a k-d tree item containing containing waypoint x, y coordinates as keys and waypoint indexes as data
@@ -173,6 +173,17 @@ class TLDetector(object):
             int: index of the closest waypoint in self.waypoints
 
         """
+        # prepare car position and orientation
+        car_x = pose.position.x
+        car_y = pose.position.y
+        s = pose.orientation.w
+        car_theta = 2 * np.arccos(s)
+        # contain theta between pi and -pi
+        if car_theta > np.pi:
+            car_theta = -(2 * np.pi - car_theta)
+        # a big number to begin with
+        mindist = 1000000
+
         # Test for using k-d tree for quick access to nearest waypoint
         if self.waypoints_kdtree is None:
             rospy.logwarn("TL Detector - Load waypoints into k-d tree")
@@ -194,7 +205,20 @@ class TLDetector(object):
                 rospy.logwarn("TL Detector - End sample waypoints in k-d tree")
 
         wp_kdtree, dist = self.waypoints_kdtree.search_nn([pose.position.x, pose.position.y])
-        return wp_kdtree.data.data
+
+        nwp_x = wp_kdtree.data.coords[0]
+        nwp_y = wp_kdtree.data.coords[1]
+        nwp_index = wp_kdtree.data.data
+        # End of test for using k-d tree for quick access to nearest waypoint
+
+        # this will be the closest waypoint index without respect to heading
+        heading = np.arctan2((nwp_y - car_y), (nwp_x - car_x))
+        angle = abs(car_theta - heading);
+        # so if the heading of the waypoint is over one quarter of pi its behind so take the next wp :)
+        if (angle > np.pi / 4):
+            nwp_index = (nwp_index + 1) % len(self.waypoints.waypoints)
+
+        return nwp_index
 
     def get_light_state(self, light):
         """Determines the current color of the traffic light
@@ -232,7 +256,7 @@ class TLDetector(object):
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
         if (self.pose and self.waypoints):
-            car_position = self.get_closest_waypoint(self.pose.pose)
+            #car_position = self.get_closest_waypoint(self.pose.pose)
             car_position = self.get_closest_waypoint2(self.pose.pose)
 
             # Find the waypoint for the next closest road stop line
@@ -240,10 +264,19 @@ class TLDetector(object):
                 stop_line = Pose()
                 stop_line.position.x = stop_line_positions[i][0]
                 stop_line.position.y = stop_line_positions[i][1]
-                cProfile.runctx('self.get_closest_waypoint(stop_line)', globals(), locals(), 'get_closest_waypoint.log')
-                light_wp = self.get_closest_waypoint(stop_line)
+
+                #cProfile.runctx('self.get_closest_waypoint(stop_line)', globals(), locals(), 'get_closest_waypoint.log')
+                #light_wp = self.get_closest_waypoint(stop_line)
+
                 cProfile.runctx('self.get_closest_waypoint2(stop_line)', globals(), locals(), 'get_closest_waypoint2.log')
                 light_wp = self.get_closest_waypoint2(stop_line)
+
+                # To display profile log file in command line window:
+                # python
+                # >>> import pstats
+                # >>> pstats.Stats('./src/tl_detector/get_closest_waypoint.log').print_stats()
+                # >>> pstats.Stats('./src/tl_detector/get_closest_waypoint2.log').print_stats()
+
                 if light_wp > car_position:
                     # Road stop line and light coming ahead
                     if light_wp != self.light_wp_prev:

@@ -31,6 +31,7 @@ class TLDetector(object):
         self.lights = []
         self.light_wp_prev = None
         self.state = None
+        self.last_wp = -1
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -56,7 +57,7 @@ class TLDetector(object):
 
         self.state = TrafficLight.UNKNOWN
         self.last_state = TrafficLight.UNKNOWN
-        self.last_wp = -1
+#        self.last_wp = -1
         self.state_count = 0
 
         rospy.spin()

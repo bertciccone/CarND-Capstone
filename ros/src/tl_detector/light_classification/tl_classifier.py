@@ -1,10 +1,20 @@
 import cv2
 import numpy as np
 from styx_msgs.msg import TrafficLight
+from keras.models import load_model
+from keras.preprocessing.image import img_to_array, load_img
+import tensorflow as tf
 
 class TLClassifier(object):
     def __init__(self):
+
+#        self.model = load_model('model.h5') 
+
+        self.graph = tf.get_default_graph()
+        #print(model)
         pass
+
+
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
@@ -15,6 +25,10 @@ class TLClassifier(object):
         """
 
         RED_SAFETY = True
+
+
+        ####################################################################
+        ####################################################################
 
         # Transform to HSV and simply count the number of color within the range 
         hsv_img = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)

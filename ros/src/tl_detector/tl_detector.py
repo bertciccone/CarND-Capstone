@@ -12,11 +12,13 @@ import cv2
 import yaml
 import math
 import numpy as np
+import PyKDL
 
 STATE_COUNT_THRESHOLD = 3
 
 DEBUG_LEVEL = 2  # 0 no Messages, 1 Important Stuff, 2 Everything
-USE_GROUND_TRUTH = True
+#USE_GROUND_TRUTH = True
+USE_GROUND_TRUTH = False
 
 class TLDetector(object):
     def __init__(self):
@@ -139,6 +141,46 @@ class TLDetector(object):
 
         return nwp_index
 
+
+    def project_to_image_plane2(self, point_in_world):
+        """Project point from 3D world coordinates to 2D camera image location
+        """
+
+        fx = self.config['camera_info']['focal_length_x']
+        fy = self.config['camera_info']['focal_length_y']
+        image_width = self.config['camera_info']['image_width']
+        image_height = self.config['camera_info']['image_height']
+        # get transform between pose of camera and world frame
+
+        trans = None
+        try:
+            now = rospy.Time.now()
+            self.listener.waitForTransform("/base_link",
+                  "/world", now, rospy.Duration(1.0))
+            (trans, rot) = self.listener.lookupTransform("/base_link",
+                  "/world", now)
+
+        except (tf.Exception, tf.LookupException, tf.ConnectivityException):
+            rospy.logerr("Failed to find camera to map transform")
+
+        #Use tranform and rotation to calculate 2D position of light in image
+        f = 2300
+        x_offset = -30
+        y_offset = 340
+        fx = f
+        fy = f
+        piw = PyKDL.Vector(point_in_world.x,point_in_world.y,point_in_world.z)
+        R = PyKDL.Rotation.Quaternion(*rot)
+        T = PyKDL.Vector(*trans)
+        p_car = R*piw+T
+
+        # x = -p_car[1]/p_car[0]*fx+image_width/2
+        # y = -p_car[2]/p_car[0]*fx+image_height/2
+        x = -p_car[1]/p_car[0]*fx+image_width/2 + x_offset
+        y = -p_car[2]/p_car[0]*fx+image_height/2+y_offset
+
+        return (int(x), int(y))
+
     def get_light_state(self, light):
         """Determines the current color of the traffic light
 
@@ -154,10 +196,19 @@ class TLDetector(object):
 
         if(not self.has_image):
             self.prev_light_loc = None
-            return False
+#            return False
+            return TrafficLight.RED
+
+        # fixing convoluted camera encoding...
+        if hasattr(self.camera_image, 'encoding'):
+            self.attribute = self.camera_image.encoding
+            if self.camera_image.encoding == '8UC3':
+                self.camera_image.encoding = "rgb8"
+        else:
+            self.camera_image.encoding = 'rgb8'
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
-
+###############################################################################
         #Get classification
         return self.light_classifier.get_classification(cv_image)
 

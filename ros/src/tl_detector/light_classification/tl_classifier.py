@@ -8,7 +8,7 @@ import tensorflow as tf
 class TLClassifier(object):
     def __init__(self):
 
-#        self.model = load_model('model.h5') 
+        self.model = load_model('model.h5') 
 
         self.graph = tf.get_default_graph()
         #print(model)

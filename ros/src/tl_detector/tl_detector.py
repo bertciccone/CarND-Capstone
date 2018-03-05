@@ -31,8 +31,8 @@ class TLDetector(object):
         self.waypoints = None
         self.camera_image = None
         self.lights = []
-        self.light_wp_prev = None
         self.kdtree = None
+        self.light_wp = -1
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -82,6 +82,7 @@ class TLDetector(object):
         """
         self.has_image = True
         self.camera_image = msg
+
         light_wp, state = self.process_traffic_lights()
 
         '''
@@ -103,48 +104,6 @@ class TLDetector(object):
         self.state_count += 1
 
     def get_closest_waypoint(self, pose):
-        """Identifies the closest path waypoint to the given position
-            https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
-        Args:
-            pose (Pose): position to match a waypoint to
-
-        Returns:
-            int: index of the closest waypoint in self.waypoints
-
-        """
-        # modified version of method by Tobias Wagner in waypoint_updater.py
-        # prepare car position and orientation
-        car_x = pose.position.x
-        car_y = pose.position.y
-        s = pose.orientation.w
-        car_theta = 2 * np.arccos(s)
-        # contain theta between pi and -pi
-        if car_theta > np.pi:
-            car_theta = -(2 * np.pi - car_theta)
-        # a big number to begin with
-        mindist = 1000000
-
-        for i in range(len(self.waypoints.waypoints)):
-            x = self.waypoints.waypoints[i].pose.pose.position.x
-            y = self.waypoints.waypoints[i].pose.pose.position.y
-
-            dist = math.sqrt((car_x - x) * (car_x - x) + (car_y - y) * (car_y - y))
-            if (dist < mindist):
-                mindist = dist
-                nwp_x = x
-                nwp_y = y
-                nwp_index = i
-
-        # this will be the closest waypoint index without respect to heading
-        heading = np.arctan2((nwp_y - car_y), (nwp_x - car_x))
-        angle = abs(car_theta - heading);
-        # so if the heading of the waypoint is over one quarter of pi its behind so take the next wp :)
-        if (angle > np.pi / 4):
-            nwp_index = (nwp_index + 1) % len(self.waypoints.waypoints)
-
-        return nwp_index
-
-    def get_closest_waypoint2(self, pose):
         """Identifies the closest path waypoint to the given position
             https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
         Args:
@@ -230,40 +189,37 @@ class TLDetector(object):
         """
         light = None
 
-        # List of positions that correspond to the line to stop in front of for a given intersection
+        # List of positions of stop lines for each traffic light
         stop_line_positions = self.config['stop_line_positions']
         if (self.pose and self.waypoints):
-            #car_position = self.get_closest_waypoint(self.pose.pose)
-            car_position = self.get_closest_waypoint2(self.pose.pose)
+            car_position = self.get_closest_waypoint(self.pose.pose)
 
-            # Find the waypoint for the next closest road stop line
-            for i in range(len(stop_line_positions)):
-                stop_line = Pose()
-                stop_line.position.x = stop_line_positions[i][0]
-                stop_line.position.y = stop_line_positions[i][1]
+            if car_position > self.light_wp:
 
-                #cProfile.runctx('self.get_closest_waypoint(stop_line)', globals(), locals(), 'get_closest_waypoint.log')
-                #light_wp = self.get_closest_waypoint(stop_line)
+                # Find the waypoint for the next closest road stop line
+                for i in range(len(stop_line_positions)):
+                    stop_line = Pose()
+                    stop_line.position.x = stop_line_positions[i][0]
+                    stop_line.position.y = stop_line_positions[i][1]
 
-                cProfile.runctx('self.get_closest_waypoint2(stop_line)', globals(), locals(), 'get_closest_waypoint2.log')
-                light_wp = self.get_closest_waypoint2(stop_line)
+                    #cProfile.runctx('self.get_closest_waypoint(stop_line)', globals(), locals(), 'get_closest_waypoint.log')
+                    light_wp = self.get_closest_waypoint(stop_line)
 
-                # To display profile log file in command line window:
-                # python
-                # >>> import pstats
-                # >>> pstats.Stats('./src/tl_detector/get_closest_waypoint.log').print_stats()
-                # >>> pstats.Stats('./src/tl_detector/get_closest_waypoint2.log').print_stats()
+                    # To display profile log file in command line window:
+                    # python
+                    # >>> import pstats
+                    # >>> pstats.Stats('./src/tl_detector/get_closest_waypoint.log').print_stats()
 
-                if light_wp > car_position:
-                    # Road stop line and light coming ahead
-                    if light_wp != self.light_wp_prev:
-                        # We passed a light; show next one for debugging
-                        if DEBUG_LEVEL >= 1:
-                            rospy.logwarn("TL Detector car wp: {0:d} pos: {1:.3f},{2:.3f}".format(car_position, self.pose.pose.position.x, self.pose.pose.position.y))
-                            rospy.logwarn("TL Detector stop line wp: {0:d} pos: {1:.3f},{2:.3f}".format(light_wp, stop_line.position.x, stop_line.position.y))
-                    light = i
-                    self.light_wp_prev = light_wp
-                    break
+                    if light_wp > car_position:
+                        # Road stop line and light coming ahead
+                        if light_wp != self.light_wp:
+                            # We passed a light; show next one for debugging
+                            if DEBUG_LEVEL >= 1:
+                                rospy.logwarn("TL Detector car wp: {0:d} pos: {1:.3f},{2:.3f}".format(car_position, self.pose.pose.position.x, self.pose.pose.position.y))
+                                rospy.logwarn("TL Detector stop line wp: {0:d} pos: {1:.3f},{2:.3f}".format(light_wp, stop_line.position.x, stop_line.position.y))
+                        light = i
+                        self.light_wp = light_wp
+                        break
 
             if DEBUG_LEVEL >= 2:
                 rospy.logwarn("TL Detector car wp: {0:d} pos: {1:.3f},{2:.3f}".format(car_position, self.pose.pose.position.x, self.pose.pose.position.y))

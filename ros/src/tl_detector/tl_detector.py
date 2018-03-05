@@ -10,11 +10,9 @@ from light_classification.tl_classifier import TLClassifier
 import tf
 import cv2
 import yaml
+from scipy import spatial
 import math
 import numpy as np
-
-# The k-d tree library from https://github.com/stefankoegl/kdtree
-import kdtree
 
 # Import the Python profiling package for performance timing
 import cProfile
@@ -23,21 +21,6 @@ STATE_COUNT_THRESHOLD = 3
 
 DEBUG_LEVEL = 1  # 0 no Messages, 1 Important Stuff, 2 Everything
 USE_GROUND_TRUTH = True
-
-# This is a k-d tree item containing containing waypoint x, y coordinates as keys and waypoint indexes as data
-class Item(object):
-    def __init__(self, x, y, data):
-        self.coords = (x, y)
-        self.data = data
-
-    def __len__(self):
-        return len(self.coords)
-
-    def __getitem__(self, i):
-        return self.coords[i]
-
-    def __repr__(self):
-        return 'Item({}, {}, {})'.format(self.coords[0], self.coords[1], self.data)
 
 class TLDetector(object):
     def __init__(self):
@@ -49,9 +32,7 @@ class TLDetector(object):
         self.camera_image = None
         self.lights = []
         self.light_wp_prev = None
-
-        # For the kdtree containing waypoint coords and indexes
-        self.waypoints_kdtree = None
+        self.kdtree = None
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -181,35 +162,31 @@ class TLDetector(object):
         # contain theta between pi and -pi
         if car_theta > np.pi:
             car_theta = -(2 * np.pi - car_theta)
-        # a big number to begin with
-        mindist = 1000000
 
-        # Test for using k-d tree for quick access to nearest waypoint
-        if self.waypoints_kdtree is None:
+        if self.kdtree is None:
+            # Load tree for quick access to nearest waypoint
             rospy.logwarn("TL Detector - Load waypoints into k-d tree")
             wp_item_list = []
             for i, wp in enumerate(self.waypoints.waypoints):
                 x = wp.pose.pose.position.x
                 y = wp.pose.pose.position.y
-                wp_item_list.append(Item(x, y, i))
-            self.waypoints_kdtree = kdtree.create(wp_item_list)
+                wp_item_list.append([x, y])
+            self.kdtree = spatial.KDTree(np.asarray(wp_item_list))
             if DEBUG_LEVEL >= 1:
                 rospy.logwarn("TL Detector - Begin sample waypoints in k-d tree")
                 for i, wp in enumerate(self.waypoints.waypoints):
                     x = wp.pose.pose.position.x
                     y = wp.pose.pose.position.y
-                    wp_kdtree, dist = self.waypoints_kdtree.search_nn([x, y])
+                    dist, j = self.kdtree.query([x, y])
                     rospy.logwarn("TL Detector wp: {0:d} pos: {1:.3f},{2:.3f}".format(i, x, y))
-                    rospy.logwarn("TL Detector kdtree: {0:d} pos: {1:.3f},{2:.3f}".format(wp_kdtree.data.data, wp_kdtree.data.coords[0], wp_kdtree.data.coords[1]))
+                    rospy.logwarn("TL Detector kdtree: {0:d} pos: {1:.3f},{2:.3f}".format(j, self.waypoints.waypoints[j].pose.pose.position.x, self.waypoints.waypoints[j].pose.pose.position.y))
                     if i > 3: break
                 rospy.logwarn("TL Detector - End sample waypoints in k-d tree")
 
-        wp_kdtree, dist = self.waypoints_kdtree.search_nn([pose.position.x, pose.position.y])
+        dist, nwp_index = self.kdtree.query([pose.position.x, pose.position.y])
 
-        nwp_x = wp_kdtree.data.coords[0]
-        nwp_y = wp_kdtree.data.coords[1]
-        nwp_index = wp_kdtree.data.data
-        # End of test for using k-d tree for quick access to nearest waypoint
+        nwp_x = self.waypoints.waypoints[nwp_index].pose.pose.position.x
+        nwp_y = self.waypoints.waypoints[nwp_index].pose.pose.position.y
 
         # this will be the closest waypoint index without respect to heading
         heading = np.arctan2((nwp_y - car_y), (nwp_x - car_x))

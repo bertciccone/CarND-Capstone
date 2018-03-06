@@ -283,4 +283,12 @@ class TLClassifier(object):
 
         """
         #TODO implement light color prediction
-        return TrafficLight.UNKNOWN
+        predicted_tl_state = self.model.predict_classes(image)
+        if predict_tl_state == 0:
+          return TrafficLight.RED
+        elif predict_tl_state == 1:
+          return TrafficLight.YELLOW
+        elif predict_tl_state == 2:
+          return TrafficLight.GREEN
+        else:
+          return TrafficLight.UNKNOWN

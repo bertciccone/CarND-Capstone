@@ -1,5 +1,39 @@
 from styx_msgs.msg import TrafficLight
 
+# tl_classifier_imports
+import pickle
+#import numpy as np
+import cv2
+#import time
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelBinarizer
+from keras.models import load_model
+import h5py
+import keras
+from keras.models import Model, Sequential
+from keras.layers.core import Dense, Activation, Flatten
+from keras.models import Model, Sequential
+from keras.layers import Input, Activation, Concatenate, Dense
+from keras.layers import Flatten, Dropout, Reshape
+from keras.layers import Convolution2D, MaxPooling2D, GlobalAveragePooling2D
+from keras.layers import AveragePooling2D
+
+from keras.optimizers import SGD,RMSprop,adam
+from keras.utils import np_utils
+
+#import matplotlib.pyplot as plt
+#import matplotlib
+import os
+#import tensorflow as tf
+#from PIL import Image
+
+from sklearn.utils import shuffle
+from sklearn.cross_validation import train_test_split
+
+import skimage
+import skimage.io as io
+
+
 # CarND Object Detection Lab
 
 import tensorflow as tf
@@ -235,6 +269,7 @@ print(times)
 class TLClassifier(object):
     def __init__(self):
         #TODO load classifier
+        self.model = load_model('AVO4_model.h5')
         pass
 
     def get_classification(self, image):

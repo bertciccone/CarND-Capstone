@@ -3,6 +3,7 @@ from styx_msgs.msg import TrafficLight
 # tl_classifier_imports
 import pickle
 #import numpy as np
+from numpy import zeros, newaxis
 import cv2
 #import time
 from sklearn.model_selection import train_test_split
@@ -269,7 +270,13 @@ print(times)
 class TLClassifier(object):
     def __init__(self):
         #TODO load classifier
+#        self.model = load_model('AVO4_model.h5')
         self.model = load_model('AVO4_model.h5')
+        self.model._make_predict_function()
+        self.graph = tf.get_default_graph()
+
+        print ('Loaded Model')
+        self.model.summary()
         pass
 
     def get_classification(self, image):
@@ -283,12 +290,23 @@ class TLClassifier(object):
 
         """
         #TODO implement light color prediction
-        predicted_tl_state = self.model.predict_classes(image)
+
+        img_resized = cv2.resize(image,(32,32))
+        img_resized = img_resized.astype(float)
+        img_resized = img_resized/255.0
+        img_resized = img_resized[newaxis,:,:,:]
+        with self.graph.as_default():
+           predict_tl_state = self.model.predict_classes(img_resized)
         if predict_tl_state == 0:
-          return TrafficLight.RED
+           print ('Traffic Light Color = RED  ')
+           return TrafficLight.RED
         elif predict_tl_state == 1:
-          return TrafficLight.YELLOW
+           print ('Traffic Light Color = YELLOW  ')
+           return TrafficLight.YELLOW
         elif predict_tl_state == 2:
-          return TrafficLight.GREEN
+           print ('Traffic Light Color = GREEN  ')
+           return TrafficLight.GREEN
         else:
-          return TrafficLight.UNKNOWN
+           return TrafficLight.UNKNOWN
+
+

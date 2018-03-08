@@ -20,7 +20,8 @@ import cProfile
 STATE_COUNT_THRESHOLD = 3
 
 DEBUG_LEVEL = 2  # 0 no Messages, 1 Important Stuff, 2 Everything
-USE_GROUND_TRUTH = True
+#USE_GROUND_TRUTH = True
+USE_GROUND_TRUTH = False
 
 class TLDetector(object):
     def __init__(self):
@@ -34,6 +35,11 @@ class TLDetector(object):
         self.kdtree = None
         self.light = 0
         self.light_wp_list = None
+
+        self.state = TrafficLight.UNKNOWN
+        self.last_state = TrafficLight.UNKNOWN
+        self.last_wp = -1
+        self.state_count = 0
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)

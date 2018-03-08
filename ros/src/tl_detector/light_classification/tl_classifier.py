@@ -270,7 +270,6 @@ print(times)
 class TLClassifier(object):
     def __init__(self):
         #TODO load classifier
-#        self.model = load_model('AVO4_model.h5')
         self.model = load_model('AVO4_model.h5')
         self.model._make_predict_function()
         self.graph = tf.get_default_graph()
@@ -290,13 +289,13 @@ class TLClassifier(object):
 
         """
         #TODO implement light color prediction
+        desired_dim=(32,32)
+        img_resized = cv2.resize(image, desired_dim, interpolation=cv2.INTER_LINEAR)
+        img_ = np.expand_dims(np.array(img_resized), axis=0)
 
-        img_resized = cv2.resize(image,(32,32))
-        img_resized = img_resized.astype(float)
-        img_resized = img_resized/255.0
-        img_resized = img_resized[newaxis,:,:,:]
         with self.graph.as_default():
-           predict_tl_state = self.model.predict_classes(img_resized)
+           predict_tl_state = self.model.predict_classes(img_)
+           print ('predict_tl_state = ', predict_tl_state)
         if predict_tl_state == 0:
            print ('Traffic Light Color = RED  ')
            return TrafficLight.RED

@@ -275,7 +275,7 @@ class TLClassifier(object):
         self.graph = tf.get_default_graph()
 
         print ('Loaded Model')
-        self.model.summary()
+#        self.model.summary()
         pass
 
     def get_classification(self, image):
@@ -295,15 +295,15 @@ class TLClassifier(object):
 
         with self.graph.as_default():
            predict_tl_state = self.model.predict_classes(img_)
-           print ('predict_tl_state = ', predict_tl_state)
+#           print ('predict_tl_state = ', predict_tl_state)
         if predict_tl_state == 0:
-           print ('Traffic Light Color = RED  ')
+           print ('Traffic Light Color = RED ', predict_tl_state[0] )
            return TrafficLight.RED
         elif predict_tl_state == 1:
-           print ('Traffic Light Color = YELLOW  ')
+           print ('Traffic Light Color = YELLOW ', predict_tl_state[0])
            return TrafficLight.YELLOW
         elif predict_tl_state == 2:
-           print ('Traffic Light Color = GREEN  ')
+           print ('Traffic Light Color = GREEN ',  predict_tl_state[0])
            return TrafficLight.GREEN
         else:
            return TrafficLight.UNKNOWN

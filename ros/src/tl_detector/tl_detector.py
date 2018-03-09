@@ -40,6 +40,12 @@ class TLDetector(object):
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
         self.state_count = 0
+        self.attribute = "NONE"
+        self.has_image = False
+        self.light_classifier = None
+        self.bridge = CvBridge()
+        self.light_classifier = TLClassifier()
+        self.listener = tf.TransformListener()
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -62,14 +68,14 @@ class TLDetector(object):
 
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
 
-        self.bridge = CvBridge()
-        self.light_classifier = TLClassifier()
-        self.listener = tf.TransformListener()
+#        self.bridge = CvBridge()
+#        self.light_classifier = TLClassifier()
+#        self.listener = tf.TransformListener()
 
-        self.state = TrafficLight.UNKNOWN
-        self.last_state = TrafficLight.UNKNOWN
-        self.last_wp = -1
-        self.state_count = 0
+#        self.state = TrafficLight.UNKNOWN
+#        self.last_state = TrafficLight.UNKNOWN
+#        self.last_wp = -1
+#        self.state_count = 0
 
         rospy.spin()
 
@@ -217,12 +223,19 @@ class TLDetector(object):
 
         if(not self.has_image):
             self.prev_light_loc = None
-            return False
+            state = TrafficLight.UNKNOWN
+            return state
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
         #Get classification
-        return self.light_classifier.get_classification(cv_image)
+        if self.has_image and self.last_state != TrafficLight.RED :
+          state = self.light_classifier.get_classification(cv_image)
+        else:
+          state = TrafficLight.UNKNOWN
+#        print ('state = ', state)
+        return state
+          
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its

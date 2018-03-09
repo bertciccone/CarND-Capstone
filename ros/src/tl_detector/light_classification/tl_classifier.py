@@ -6,21 +6,21 @@ import pickle
 from numpy import zeros, newaxis
 import cv2
 #import time
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelBinarizer
+#from sklearn.model_selection import train_test_split
+#from sklearn.preprocessing import LabelBinarizer
 from keras.models import load_model
 import h5py
 import keras
-from keras.models import Model, Sequential
-from keras.layers.core import Dense, Activation, Flatten
-from keras.models import Model, Sequential
-from keras.layers import Input, Activation, Concatenate, Dense
-from keras.layers import Flatten, Dropout, Reshape
-from keras.layers import Convolution2D, MaxPooling2D, GlobalAveragePooling2D
-from keras.layers import AveragePooling2D
+#from keras.models import Model, Sequential
+#from keras.layers.core import Dense, Activation, Flatten
+#from keras.models import Model, Sequential
+#from keras.layers import Input, Activation, Concatenate, Dense
+#from keras.layers import Flatten, Dropout, Reshape
+#from keras.layers import Convolution2D, MaxPooling2D, GlobalAveragePooling2D
+#from keras.layers import AveragePooling2D
 
-from keras.optimizers import SGD,RMSprop,adam
-from keras.utils import np_utils
+#from keras.optimizers import SGD,RMSprop,adam
+#from keras.utils import np_utils
 
 #import matplotlib.pyplot as plt
 #import matplotlib

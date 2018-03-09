@@ -204,7 +204,8 @@ with tf.Session(graph=detection_graph) as sess:
 
     plt.figure(figsize=(12, 8))
     plt.imshow(image)
-    plt.savefig('assets/dog_boxes.jpg')
+    #plt.savefig('assets/dog_boxes.jpg')
+    plt.savefig('assets/sample1_boxes.jpg')
 
 # Timing Detection
 

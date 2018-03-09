@@ -19,8 +19,8 @@ import keras
 #from keras.layers import Convolution2D, MaxPooling2D, GlobalAveragePooling2D
 #from keras.layers import AveragePooling2D
 
-#from keras.optimizers import SGD,RMSprop,adam
-#from keras.utils import np_utils
+from keras.optimizers import SGD,RMSprop,adam
+from keras.utils import np_utils
 
 #import matplotlib.pyplot as plt
 #import matplotlib
@@ -30,7 +30,6 @@ import os
 
 #from sklearn.utils import shuffle
 #from sklearn.cross_validation import train_test_split
-
 #import skimage
 #import skimage.io as io
 
@@ -39,10 +38,10 @@ import os
 
 import tensorflow as tf
 import numpy as np
-#import matplotlib
+import matplotlib
 # Force matplotlib to not use any Xwindows backend.
-#matplotlib.use('Agg')
-#import matplotlib.pyplot as plt
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageColor
@@ -51,6 +50,11 @@ from scipy.stats import norm
 
 #%matplotlib inline
 plt.style.use('ggplot')
+
+from sklearn.utils import shuffle
+from sklearn.cross_validation import train_test_split
+import skimage
+import skimage.io as io
 
 # Exercise 1 - Implement Separable Depthwise Convolution
 

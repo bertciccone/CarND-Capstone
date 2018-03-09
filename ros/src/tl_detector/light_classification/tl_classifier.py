@@ -1,7 +1,7 @@
 from styx_msgs.msg import TrafficLight
 
 # tl_classifier_imports
-import pickle
+#import pickle
 #import numpy as np
 from numpy import zeros, newaxis
 import cv2
@@ -28,21 +28,21 @@ import os
 #import tensorflow as tf
 #from PIL import Image
 
-from sklearn.utils import shuffle
-from sklearn.cross_validation import train_test_split
+#from sklearn.utils import shuffle
+#from sklearn.cross_validation import train_test_split
 
-import skimage
-import skimage.io as io
+#import skimage
+#import skimage.io as io
 
 
 # CarND Object Detection Lab
 
 import tensorflow as tf
 import numpy as np
-import matplotlib
+#import matplotlib
 # Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+#matplotlib.use('Agg')
+#import matplotlib.pyplot as plt
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageColor

@@ -3,10 +3,16 @@ from styx_msgs.msg import TrafficLight
 import tensorflow as tf
 import numpy as np
 import cv2
+import math
+import tf2_ros
+import geometry_msgs.msg
+import time
+import os
 
 DEBUG_LEVEL = 2  # 0 no Messages, 1 Important Stuff, 2 Everything
 
 # Reference: Object Detection Lab Code
+# Reference: ROS tf2 Tutorial Code
 
 def mobilenet_conv_block(x, kernel_size, output_channels):
     """
@@ -68,7 +74,9 @@ def load_graph(graph_file):
 
 class TLClassifier(object):
     def __init__(self):
-        #TODO load classifier
+
+        # Detection Initialization
+
         SSD_GRAPH_FILE = './ssd_frozen_inference_graph.pb'
         self.detection_graph = load_graph(SSD_GRAPH_FILE)
 
@@ -86,6 +94,15 @@ class TLClassifier(object):
         self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
 
         self.light_debug_index = 0
+        self.run_time = time.strftime("%H:%M:%S")
+        if DEBUG_LEVEL >= 2:
+            if not os.path.exists("./" + self.run_time):
+                os.makedirs("./" + self.run_time)
+
+        # Coordinate Transformation Initialization
+
+        self.tfBuffer = tf2_ros.Buffer()
+        self.listener = tf2_ros.TransformListener(self.tfBuffer)
 
     def get_traffic_light_image(self, image):
         """Detect a traffic light in the image and return it in a new cropped image
@@ -111,7 +128,7 @@ class TLClassifier(object):
             scores = np.squeeze(scores)
             classes = np.squeeze(classes)
 
-            confidence_cutoff = 0.7
+            confidence_cutoff = 0.75
             # Filter boxes with a confidence score less than `confidence_cutoff`
             boxes, scores, classes = filter_boxes(confidence_cutoff, boxes, scores, classes)
 
@@ -126,8 +143,9 @@ class TLClassifier(object):
                 if class_id == 10:
                     light_image = image[int(bot):int(top), int(left):int(right)]
                     if DEBUG_LEVEL >= 2:
-                        print("TL Classifier light box", int(bot), int(top), int(left), int(right))
-                        cv2.imwrite("assets/light_image" + str(self.light_debug_index) + ".jpg", light_image)
+                        print("TL Classifier light box", self.run_time, int(bot), int(top), int(left), int(right))
+                        cv2.imwrite(self.run_time + "/camera_image" + str(self.light_debug_index) + ".jpg", image)
+                        cv2.imwrite(self.run_time + "/light_image" + str(self.light_debug_index) + ".jpg", light_image)
                         self.light_debug_index += 1
         return light_image
 

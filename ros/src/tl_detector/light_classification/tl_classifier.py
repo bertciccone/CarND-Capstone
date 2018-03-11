@@ -2,6 +2,17 @@ from styx_msgs.msg import TrafficLight
 
 import tensorflow as tf
 import numpy as np
+
+# BEGIN TEST CODE
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageColor
+# END TEST CODE
+
 import cv2
 import math
 import tf2_ros
@@ -13,6 +24,14 @@ DEBUG_LEVEL = 2  # 0 no Messages, 1 Important Stuff, 2 Everything
 
 # Reference: Object Detection Lab Code
 # Reference: ROS tf2 Tutorial Code
+
+# BEGIN TEST CODE
+# Colors (one for each class)
+READ_TEST_IMAGE = False
+cmap = ImageColor.colormap
+print("Number of colors =", len(cmap))
+COLOR_LIST = sorted([c for c in cmap.keys()])
+# END TEST CODE
 
 def mobilenet_conv_block(x, kernel_size, output_channels):
     """
@@ -72,12 +91,89 @@ def load_graph(graph_file):
             tf.import_graph_def(od_graph_def, name='')
     return graph
 
+# BEGIN TEST CODE
+def draw_boxes(image, boxes, classes, run_time, light_debug_index):
+    """Draw bounding boxes on the image"""
+    if not READ_TEST_IMAGE:
+        image = Image.fromarray(image)
+    draw = ImageDraw.Draw(image)
+    for i in range(len(boxes)):
+        bot, left, top, right = boxes[i, ...]
+        class_id = int(classes[i])
+        color = COLOR_LIST[class_id]
+        draw.line([(left, top), (left, bot), (right, bot), (right, top), (left, top)], width=4, fill=color)
+
+    plt.figure(figsize=(12, 8))
+    plt.imshow(image)
+    plt.savefig(run_time + "/boxes_image" + str(light_debug_index) + ".jpg")
+
+def vanilla_conv_block(x, kernel_size, output_channels):
+    """
+    Vanilla Conv -> Batch Norm -> ReLU
+    """
+    x = tf.layers.conv2d(
+        x, output_channels, kernel_size, (2, 2), padding='SAME')
+    x = tf.layers.batch_normalization(x)
+    return tf.nn.relu(x)
+# END TEST CODE
+
 class TLClassifier(object):
     def __init__(self):
+
+        # BEGIN TEST CODE
+        plt.style.use('ggplot')
+
+        # constants but you can change them so I guess they're not so constant :)
+        INPUT_CHANNELS = 32
+        OUTPUT_CHANNELS = 512
+        KERNEL_SIZE = 3
+        IMG_HEIGHT = 256
+        IMG_WIDTH = 256
+
+        with tf.Session(graph=tf.Graph()) as sess:
+            # input
+            x = tf.constant(np.random.randn(1, IMG_HEIGHT, IMG_WIDTH, INPUT_CHANNELS), dtype=tf.float32)
+
+            with tf.variable_scope('vanilla'):
+                vanilla_conv = vanilla_conv_block(x, KERNEL_SIZE, OUTPUT_CHANNELS)
+            with tf.variable_scope('mobile'):
+                mobilenet_conv = mobilenet_conv_block(x, KERNEL_SIZE, OUTPUT_CHANNELS)
+
+            vanilla_params = [
+                (v.name, np.prod(v.get_shape().as_list()))
+                for v in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'vanilla')
+            ]
+            mobile_params = [
+                (v.name, np.prod(v.get_shape().as_list()))
+                for v in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'mobile')
+            ]
+
+            print("VANILLA CONV BLOCK")
+            total_vanilla_params = sum([p[1] for p in vanilla_params])
+            for p in vanilla_params:
+                print("Variable {0}: number of params = {1}".format(p[0], p[1]))
+            print("Total number of params =", total_vanilla_params)
+            print()
+
+            print("MOBILENET CONV BLOCK")
+            total_mobile_params = sum([p[1] for p in mobile_params])
+            for p in mobile_params:
+                print("Variable {0}: number of params = {1}".format(p[0], p[1]))
+            print("Total number of params =", total_mobile_params)
+            print()
+
+            print("{0:.3f}x parameter reduction".format(total_vanilla_params /
+                                                     total_mobile_params))
+
+        print("Number of colors/classes, one color per class")
+
+        # END TEST CODE
 
         # Detection Initialization
 
         SSD_GRAPH_FILE = './ssd_frozen_inference_graph.pb'
+        RFCN_GRAPH_FILE = './rfcn_frozen_inference_graph.pb'
+        FASTER_RCNN_GRAPH_FILE = './faster_rcnn_frozen_inference_graph.pb'
         self.detection_graph = load_graph(SSD_GRAPH_FILE)
 
         # The input placeholder for the image.
@@ -116,6 +212,11 @@ class TLClassifier(object):
         """
         light_image = None
 
+        # BEGIN TEST CODE
+        if READ_TEST_IMAGE:
+            image = Image.open('assets/sample1.jpg')
+        # END TEST CODE
+
         image_np = np.expand_dims(np.asarray(image, dtype=np.uint8), 0)
 
         with tf.Session(graph=self.detection_graph) as sess:
@@ -128,24 +229,40 @@ class TLClassifier(object):
             scores = np.squeeze(scores)
             classes = np.squeeze(classes)
 
-            confidence_cutoff = 0.75
+            confidence_cutoff = 0.8
             # Filter boxes with a confidence score less than `confidence_cutoff`
             boxes, scores, classes = filter_boxes(confidence_cutoff, boxes, scores, classes)
 
             # The current box coordinates are normalized to a range between 0 and 1.
             # This converts the coordinates actual location on the image.
-            width, height, channels = image.shape
+
+            # BEGIN TEST CODE
+            if READ_TEST_IMAGE:
+                width, height = image.size
+            else:
+                #width, height, channels = image.shape
+                width = 800
+                height = 600
+
+            # END TEST CODE
+
             box_coords = to_image_coords(boxes, height, width)
+
+            # BEGIN TEST CODE
+            # Each class with be represented by a differently colored box
+            draw_boxes(image, box_coords, classes, self.run_time, self.light_debug_index)
+            # END TEST CODE
 
             for i in range(len(boxes)):
                 bot, left, top, right = box_coords[i, ...]
                 class_id = int(classes[i])
                 if class_id == 10:
-                    light_image = image[int(bot):int(top), int(left):int(right)]
+                    #light_image = image[int(bot):int(top), int(left):int(right)]
                     if DEBUG_LEVEL >= 2:
-                        print("TL Classifier light box", self.run_time, int(bot), int(top), int(left), int(right))
-                        cv2.imwrite(self.run_time + "/camera_image" + str(self.light_debug_index) + ".jpg", image)
-                        cv2.imwrite(self.run_time + "/light_image" + str(self.light_debug_index) + ".jpg", light_image)
+                        #print("TL Classifier light box", self.run_time, int(bot), int(top), int(left), int(right))
+                        if not READ_TEST_IMAGE:
+                            cv2.imwrite(self.run_time + "/camera_image" + str(self.light_debug_index) + ".jpg", image)
+                        #cv2.imwrite(self.run_time + "/light_image" + str(self.light_debug_index) + ".jpg", light_image)
                         self.light_debug_index += 1
         return light_image
 

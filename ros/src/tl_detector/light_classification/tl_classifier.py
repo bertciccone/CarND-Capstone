@@ -15,19 +15,18 @@ from PIL import ImageColor
 
 import cv2
 import math
-import tf2_ros
-import geometry_msgs.msg
 import time
 import os
 
 DEBUG_LEVEL = 2  # 0 no Messages, 1 Important Stuff, 2 Everything
 
 # Reference: Object Detection Lab Code
-# Reference: ROS tf2 Tutorial Code
 
 # BEGIN TEST CODE
 # Colors (one for each class)
 READ_TEST_IMAGE = False
+WRITE_BOXES_IMAGE = True
+WRITE_DETECTION_IMAGE = True
 cmap = ImageColor.colormap
 print("Number of colors =", len(cmap))
 COLOR_LIST = sorted([c for c in cmap.keys()])
@@ -195,12 +194,7 @@ class TLClassifier(object):
             if not os.path.exists("./" + self.run_time):
                 os.makedirs("./" + self.run_time)
 
-        # Coordinate Transformation Initialization
-
-        self.tfBuffer = tf2_ros.Buffer()
-        self.listener = tf2_ros.TransformListener(self.tfBuffer)
-
-    def get_traffic_light_image(self, image):
+    def traffic_light_detection(self, image):
         """Detect a traffic light in the image and return it in a new cropped image
 
         Args:
@@ -208,7 +202,6 @@ class TLClassifier(object):
 
         Returns:
             imaged cropped to a box around the traffic light
-
         """
         light_image = None
 
@@ -229,7 +222,7 @@ class TLClassifier(object):
             scores = np.squeeze(scores)
             classes = np.squeeze(classes)
 
-            confidence_cutoff = 0.8
+            confidence_cutoff = 0.6
             # Filter boxes with a confidence score less than `confidence_cutoff`
             boxes, scores, classes = filter_boxes(confidence_cutoff, boxes, scores, classes)
 
@@ -240,9 +233,7 @@ class TLClassifier(object):
             if READ_TEST_IMAGE:
                 width, height = image.size
             else:
-                #width, height, channels = image.shape
-                width = 800
-                height = 600
+                height, width, channels = image.shape
 
             # END TEST CODE
 
@@ -257,12 +248,13 @@ class TLClassifier(object):
                 bot, left, top, right = box_coords[i, ...]
                 class_id = int(classes[i])
                 if class_id == 10:
-                    #light_image = image[int(bot):int(top), int(left):int(right)]
+                    light_image = image[int(bot):int(top), int(left):int(right)]
                     if DEBUG_LEVEL >= 2:
-                        #print("TL Classifier light box", self.run_time, int(bot), int(top), int(left), int(right))
-                        if not READ_TEST_IMAGE:
+                        print("TL Classifier image", width, height, "light box", self.run_time, int(bot), int(top), int(left), int(right))
+                        if not READ_TEST_IMAGE and WRITE_BOXES_IMAGE:
                             cv2.imwrite(self.run_time + "/camera_image" + str(self.light_debug_index) + ".jpg", image)
-                        #cv2.imwrite(self.run_time + "/light_image" + str(self.light_debug_index) + ".jpg", light_image)
+                        if not READ_TEST_IMAGE and WRITE_BOXES_IMAGE:
+                            cv2.imwrite(self.run_time + "/light_image" + str(self.light_debug_index) + ".jpg", light_image)
                         self.light_debug_index += 1
         return light_image
 
@@ -278,6 +270,6 @@ class TLClassifier(object):
         """
         #TODO implement light color prediction
 
-        self.get_traffic_light_image(image)
+        image = self.traffic_light_detection(image)
 
         return TrafficLight.UNKNOWN

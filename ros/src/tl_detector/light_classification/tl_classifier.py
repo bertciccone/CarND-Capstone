@@ -3,11 +3,6 @@ from styx_msgs.msg import TrafficLight
 import tensorflow as tf
 import numpy as np
 
-from keras.models import load_model
-import h5py
-import keras
-from numpy import zeros, newaxis
-
 
 # BEGIN TEST CODE
 import matplotlib
@@ -23,6 +18,12 @@ import cv2
 import math
 import time
 import os
+
+import h5py
+import keras
+from keras.models import load_model
+from numpy import zeros, newaxis
+import rospy
 
 DEBUG_LEVEL = 2  # 0 no Messages, 1 Important Stuff, 2 Everything
 
@@ -246,8 +247,6 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
         #TODO implement light color prediction
-
-        image = self.traffic_light_detection(image)
 
         image_org = image
 

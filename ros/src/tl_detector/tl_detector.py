@@ -240,6 +240,14 @@ class TLDetector(object):
                     if DEBUG_LEVEL >= 2:
                         rospy.logwarn("TL Detector car wp: {0:d} pos: {1:.3f},{2:.3f}, {3:d}".format(car_position_wp, self.pose.pose.position.x, self.pose.pose.position.y,light_wp))
 
+            if self.has_image:
+#                print ('HAS IMAGE')
+                state = self.get_light_state(self.light)
+                print ('---------Car_WP, Light_WP, Light_State = ', car_position_wp, light_wp, state )
+            else:
+                print ('NOOOOOOOOOOOOOOOOOO IMAGE')
+
+
             state = self.get_light_state(self.light)
             return light_wp, state
         else:

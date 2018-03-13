@@ -212,7 +212,17 @@ class TLDetector(object):
             self.prev_light_loc = None
             return False
 
-        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+########################################################################
+        self.camera_image.encoding = 'rgb8'
+        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "rgb8")
+########################################################################
+#        self.camera_image.encoding = 'bgr8'
+#        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+########################################################################
+
+        if light:
+             ground_truth = self.lights[light].state
+             print ('ground_truth = ', ground_truth)
 
         #Get classification
         return self.light_classifier.get_classification(cv_image)

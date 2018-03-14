@@ -213,7 +213,18 @@ class TLDetector(object):
             self.prev_light_loc = None
             return False
 
-        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+########################################################################
+        self.camera_image.encoding = 'rgb8'
+        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "rgb8")
+########################################################################
+#        self.camera_image.encoding = 'bgr8'
+#        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+########################################################################
+
+        if light:
+             ground_truth = self.lights[light].state
+             print ('----------------------------ground_truth = ', ground_truth)
+
 
         #Get classification
         return self.light_classifier.get_classification(cv_image)
@@ -243,6 +254,10 @@ class TLDetector(object):
                         rospy.logwarn("TL Detector car wp: {0:d} pos: {1:.3f},{2:.3f}, {3:d}".format(car_position_wp, self.pose.pose.position.x, self.pose.pose.position.y,light_wp))
 
             state = self.get_light_state(self.light)
+#        if light:
+#             ground_truth = self.lights[light].state
+#             print ('----------------ground_truth = ', ground_truth)
+            print ('---------Car_WP, Light_WP, Predicted_Light, Ground_Truth_Light  = ', car_position_wp, light_wp, state )
             return light_wp, state
         else:
             return -1, TrafficLight.UNKNOWN

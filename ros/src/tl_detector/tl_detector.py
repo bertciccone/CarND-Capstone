@@ -112,6 +112,15 @@ class TLDetector(object):
         Args:
             msg (Image): image from car-mounted camera
         """
+
+
+        diff = rospy.get_rostime() - msg.header.stamp
+
+        if(diff > rospy.Duration.from_sec(0.2) ):  # more than 0.2s delay - skip
+            if DEBUG_LEVEL >= 1: rospy.logwarn("Time since last image - skip: {0:s}".format(diff))
+            #rospy.logwarn("Duration 0.2s: {0:s}".format(rospy.Duration.from_sec(0.2)))
+            return
+
         self.has_image = True
         self.camera_image = msg
 
@@ -216,8 +225,11 @@ class TLDetector(object):
              ground_truth = self.lights[light].state
              print ('ground_truth = ', ground_truth)
 
-        #Get classification
-        return self.light_classifier.get_classification(cv_image)
+        if DEBUG_LEVEL >= 2: rospy.logwarn("TL Detector - Before classification")
+        light_state = self.light_classifier.get_classification(cv_image)
+        if DEBUG_LEVEL >= 2: rospy.logwarn("TL Detector - After classification")
+
+        return light_state
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its

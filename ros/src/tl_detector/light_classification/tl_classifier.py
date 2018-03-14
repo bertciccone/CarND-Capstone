@@ -116,7 +116,8 @@ def draw_boxes(image, boxes, classes, run_time, light_debug_index):
 class TLClassifier(object):
     def __init__(self):
         print ('######################       BEFORE Loaded Model')
-        self.model = load_model('AVO7_v1_model.h5')
+#        self.model = load_model('AVO7_v1_model.h5')
+        self.model = load_model('model.h5')
         self.model._make_predict_function()
         self.graph = tf.get_default_graph()
         print ('######################       AFTER Loaded Model')

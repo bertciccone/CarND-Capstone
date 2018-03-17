@@ -251,6 +251,11 @@ class TLClassifier(object):
         """
         #TODO implement light color prediction
 
+        if self.INIT_STATE:
+          self.LIGHT_LAST_STATE = TrafficLight.RED
+          self.INIT_STATE = False
+          return TrafficLight.RED
+
         image_org = image
 
         image = self.traffic_light_detection(image)
@@ -268,7 +273,10 @@ class TLClassifier(object):
           print ('USE Image ORG ....   shape = ', image.shape)
           print ('Light_LAST_STATE = ', self.LIGHT_LAST_STATE)
 #          print ('Return TrafficLight.UNKNOWN')
-#          return self.LIGHT_LAST_STATE
+          if self.LIGHT_LAST_STATE == 1:
+            return TrafficLight.RED
+          else:
+            return self.LIGHT_LAST_STATE
 #          return TrafficLight.UNKNOWN
 
 
@@ -301,9 +309,9 @@ class TLClassifier(object):
            return TrafficLight.GREEN
 
 
-        if self.INIT_STATE:
-          self.LIGHT_LAST_STATE = TrafficLight.RED
-          self.INIT_STATE = False
-          return TrafficLight.RED
+#        if self.INIT_STATE:
+#          self.LIGHT_LAST_STATE = TrafficLight.RED
+#          self.INIT_STATE = False
+#          return TrafficLight.RED
 
         return TrafficLight.UNKNOWN

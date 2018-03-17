@@ -127,6 +127,8 @@ class TLClassifier(object):
         self.DO_RED_ONCE = True
         self.DO_YELLOW_ONCE = True
         self.DO_GREEN_ONCE = True
+        self.LIGHT_LAST_STATE = TrafficLight.UNKNOWN
+        self.INIT_STATE = True
 
 
 
@@ -264,6 +266,9 @@ class TLClassifier(object):
           rospy.logwarn ('################No Image shape error'+ str(e))
           image = image_org
           print ('USE Image ORG ....   shape = ', image.shape)
+          print ('Light_LAST_STATE = ', self.LIGHT_LAST_STATE)
+#          print ('Return TrafficLight.UNKNOWN')
+#          return self.LIGHT_LAST_STATE
 #          return TrafficLight.UNKNOWN
 
 
@@ -271,28 +276,34 @@ class TLClassifier(object):
         img_ = np.expand_dims(np.array(img_resized), axis=0)
 
         with self.graph.as_default():
-           predict_tl_state = self.model.predict_classes(img_)
-           print ('predict_tl_state = ', predict_tl_state[0])
-        if predict_tl_state == 0:
-           print ('Traffic Light Color = RED ', predict_tl_state[0] )
+           classified_light_state = self.model.predict_classes(img_)
+           print ('classified_light_state = ', classified_light_state[0])
+        if classified_light_state == 0:
+           print ('Traffic Light Color = RED ', classified_light_state[0] )
            if self.DO_RED_ONCE:
              cv2.imwrite('red_image.jpg',image)
              self.DO_RED_ONCE = False
+           self.LIGHT_LAST_STATE = TrafficLight.RED
            return TrafficLight.RED
-        elif predict_tl_state == 1:
-           print ('Traffic Light Color = YELLOW ', predict_tl_state[0])
+        elif classified_light_state == 1:
+           print ('Traffic Light Color = YELLOW ', classified_light_state[0])
            if self.DO_YELLOW_ONCE:
              cv2.imwrite('yellow_image.jpg',image)
              self.DO_YELLOW_ONCE = False
+           self.LIGHT_LAST_STATE = TrafficLight.YELLOW
            return TrafficLight.YELLOW
-        elif predict_tl_state == 2:
-           print ('Traffic Light Color = GREEN ',  predict_tl_state[0])
+        elif classified_light_state == 2:
+           print ('Traffic Light Color = GREEN ',  classified_light_state[0])
            if self.DO_GREEN_ONCE:
              cv2.imwrite('green_image.jpg',image)
              self.DO_GREEN_ONCE = False
+           self.LIGHT_LAST_STATE = TrafficLight.GREEN
            return TrafficLight.GREEN
 
 
-
+        if self.INIT_STATE:
+          self.LIGHT_LAST_STATE = TrafficLight.RED
+          self.INIT_STATE = False
+          return TrafficLight.RED
 
         return TrafficLight.UNKNOWN

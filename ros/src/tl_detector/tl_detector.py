@@ -17,7 +17,7 @@ import numpy as np
 # Import the Python profiling package for performance timing
 import cProfile
 
-STATE_COUNT_THRESHOLD = 3
+STATE_COUNT_THRESHOLD = 2
 
 DEBUG_LEVEL = 2  # 0 no Messages, 1 Important Stuff, 2 Everything
 USE_GROUND_TRUTH = False
@@ -34,6 +34,17 @@ class TLDetector(object):
         self.kdtree = None
         self.light = 0
         self.light_wp_list = None
+        self.light_classifier = TLClassifier()
+        self.listener = tf.TransformListener()
+#        self.state = TrafficLight.UNKNOWN
+#        self.last_state = TrafficLight.UNKNOWN
+        self.state = TrafficLight.RED
+        self.last_state = TrafficLight.RED
+        self.last_wp = -1
+        self.state_count = 0
+        self.ground_truth = None
+        self.init_state = True
+
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -57,13 +68,12 @@ class TLDetector(object):
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
 
         self.bridge = CvBridge()
-        self.light_classifier = TLClassifier()
-        self.listener = tf.TransformListener()
-
-        self.state = TrafficLight.UNKNOWN
-        self.last_state = TrafficLight.UNKNOWN
-        self.last_wp = -1
-        self.state_count = 0
+#        self.light_classifier = TLClassifier()
+#        self.listener = tf.TransformListener()
+#        self.state = TrafficLight.UNKNOWN
+#        self.last_state = TrafficLight.UNKNOWN
+#        self.last_wp = -1
+#        self.state_count = 0
 
         rospy.spin()
 
@@ -214,16 +224,16 @@ class TLDetector(object):
             return False
 
 ########################################################################
-        self.camera_image.encoding = 'rgb8'
-        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "rgb8")
+#        self.camera_image.encoding = 'rgb8'
+#        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "rgb8")
 ########################################################################
-#        self.camera_image.encoding = 'bgr8'
-#        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+        self.camera_image.encoding = 'bgr8'
+        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 ########################################################################
 
         if light:
-             ground_truth = self.lights[light].state
-             print ('ground_truth = ', ground_truth)
+             self.ground_truth = self.lights[light].state
+#             print ('ground_truth = ', ground_truth)
 
         if DEBUG_LEVEL >= 2: rospy.logwarn("TL Detector - Before classification")
         light_state = self.light_classifier.get_classification(cv_image)
@@ -259,10 +269,24 @@ class TLDetector(object):
 #            else:
 #                print ('NOOOOOOOOOOOOOOOOOO IMAGE')
 
+            if ( self.init_state and light_wp):
+              self.init_state = False
+              state = self.get_light_state(self.light)
+              print ('---------Car_WP, Light_WP, Light_State, ground_truth ', car_position_wp, light_wp, state, self.ground_truth )
+              return light_wp, state
+#              return light_wp, TrafficLight.RED
+          
 
-            state = self.get_light_state(self.light)
-            print ('---------Car_WP, Light_WP, Light_State = ', car_position_wp, light_wp, state )
-            return light_wp, state
+            if ( 0<light_wp - car_position_wp < 300 and self.has_image ):
+              state = self.get_light_state(self.light)
+              print ('---------Car_WP, Light_WP, Light_State, ground_truth ', car_position_wp, light_wp, state, self.ground_truth )
+              return light_wp, state
+            elif (self.init_state and light_wp):
+              print ('---------Car_WP, Light_WP, Light_State, ground_truth ', car_position_wp, light_wp, state, self.ground_truth )
+              self.init_state = False
+              return light_wp, TrafficLight.RED
+            else:
+              return -1, TrafficLight.UNKNOWN
         else:
             return -1, TrafficLight.UNKNOWN
 

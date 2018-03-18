@@ -121,6 +121,10 @@ class TLClassifier(object):
 
         print ('######################       BEFORE Loaded Model')
         self.model = load_model('AVO7_v1_model.h5')
+#        self.model = load_model('AVO10_v1_model.h5')
+#        self.model = load_model('AVO11_v1_model.h5')
+#        self.model = load_model('AVO12_v1_model.h5')
+#        self.model = load_model('AVO13_v1_model.h5')
         self.model._make_predict_function()
         self.graph = tf.get_default_graph()
         print ('######################       AFTER Loaded Model')
@@ -262,9 +266,6 @@ class TLClassifier(object):
 
         desired_dim=(32,32)
 
-#        cv2.imshow('image',image)
-#        cv2.waitKey(0)
-#        cv2.destroyAllWindows()
         try:
           print ('Image shape = ', image.shape)
         except Exception as e:
@@ -272,12 +273,12 @@ class TLClassifier(object):
           image = image_org
           print ('USE Image ORG ....   shape = ', image.shape)
           print ('Light_LAST_STATE = ', self.LIGHT_LAST_STATE)
-#          print ('Return TrafficLight.UNKNOWN')
           if self.LIGHT_LAST_STATE == 1:
             return TrafficLight.RED
+          elif self.LIGHT_LAST_STATE == 0:
+            pass
           else:
             return self.LIGHT_LAST_STATE
-#          return TrafficLight.UNKNOWN
 
 
         img_resized = cv2.resize(image, desired_dim, interpolation=cv2.INTER_LINEAR)
@@ -288,9 +289,9 @@ class TLClassifier(object):
            print ('classified_light_state = ', classified_light_state[0])
         if classified_light_state == 0:
            print ('Traffic Light Color = RED ', classified_light_state[0] )
-           if self.DO_RED_ONCE:
-             cv2.imwrite('red_image.jpg',image)
-             self.DO_RED_ONCE = False
+#           if self.DO_RED_ONCE:
+           cv2.imwrite('red_image.jpg',image)
+#             self.DO_RED_ONCE = False
            self.LIGHT_LAST_STATE = TrafficLight.RED
            return TrafficLight.RED
         elif classified_light_state == 1:
@@ -298,8 +299,10 @@ class TLClassifier(object):
            if self.DO_YELLOW_ONCE:
              cv2.imwrite('yellow_image.jpg',image)
              self.DO_YELLOW_ONCE = False
-           self.LIGHT_LAST_STATE = TrafficLight.YELLOW
-           return TrafficLight.YELLOW
+#           self.LIGHT_LAST_STATE = TrafficLight.YELLOW
+           self.LIGHT_LAST_STATE = TrafficLight.RED
+#           return TrafficLight.YELLOW
+           return TrafficLight.RED
         elif classified_light_state == 2:
            print ('Traffic Light Color = GREEN ',  classified_light_state[0])
            if self.DO_GREEN_ONCE:
@@ -309,9 +312,5 @@ class TLClassifier(object):
            return TrafficLight.GREEN
 
 
-#        if self.INIT_STATE:
-#          self.LIGHT_LAST_STATE = TrafficLight.RED
-#          self.INIT_STATE = False
-#          return TrafficLight.RED
 
         return TrafficLight.UNKNOWN

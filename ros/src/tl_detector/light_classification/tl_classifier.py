@@ -5,13 +5,13 @@ import numpy as np
 
 
 # BEGIN TEST CODE
-import matplotlib
+#import matplotlib
 # Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageColor
+#matplotlib.use('Agg')
+#import matplotlib.pyplot as plt
+#from PIL import Image
+#from PIL import ImageDraw
+#from PIL import ImageColor
 # END TEST CODE
 
 import cv2
@@ -34,80 +34,23 @@ DEBUG_LEVEL = 1  # 0 no Messages, 1 Important Stuff, 2 Everything
 # Colors (one for each class)
 READ_TEST_IMAGE = False
 WRITE_BOXES_IMAGE = False
-WRITE_CAMERA_IMAGE = True
-WRITE_DETECTION_IMAGE = True
-cmap = ImageColor.colormap
-COLOR_LIST = sorted([c for c in cmap.keys()])
+WRITE_CAMERA_IMAGE = False
+WRITE_DETECTION_IMAGE = False
+#cmap = ImageColor.colormap
+#COLOR_LIST = sorted([c for c in cmap.keys()])
 # END TEST CODE
 
-def mobilenet_conv_block(x, kernel_size, output_channels):
-    """
-    Depthwise Conv -> Batch Norm -> ReLU -> Pointwise Conv -> Batch Norm -> ReLU
-    """
-    # assumes BHWC format
-    input_channel_dim = x.get_shape().as_list()[-1]
-    W = tf.Variable(tf.truncated_normal((kernel_size, kernel_size, input_channel_dim, 1)))
-
-    # depthwise conv
-    x = tf.nn.depthwise_conv2d(x, W, (1, 2, 2, 1), padding='SAME')
-    x = tf.layers.batch_normalization(x, fused=True)
-    x = tf.nn.relu(x)
-
-    # pointwise conv
-    x = tf.layers.conv2d(x, output_channels, (1, 1), padding='SAME')
-    x = tf.layers.batch_normalization(x, fused=True)
-
-    return tf.nn.relu(x)
-
-def filter_boxes(min_score, boxes, scores, classes):
-    """Return boxes with a confidence >= `min_score`"""
-    n = len(classes)
-    idxs = []
-    for i in range(n):
-        if scores[i] >= min_score:
-            idxs.append(i)
-
-    filtered_boxes = boxes[idxs, ...]
-    filtered_scores = scores[idxs, ...]
-    filtered_classes = classes[idxs, ...]
-    return filtered_boxes, filtered_scores, filtered_classes
-
-def to_image_coords(boxes, height, width):
-    """
-    The original box coordinate output is normalized, i.e [0, 1].
-    This converts it back to the original coordinate based on the image
-    size.
-    """
-    box_coords = np.zeros_like(boxes)
-    box_coords[:, 0] = boxes[:, 0] * height
-    box_coords[:, 1] = boxes[:, 1] * width
-    box_coords[:, 2] = boxes[:, 2] * height
-    box_coords[:, 3] = boxes[:, 3] * width
-
-    return box_coords
-
-def load_graph(graph_file):
-    """Loads a frozen inference graph"""
-    graph = tf.Graph()
-    with graph.as_default():
-        od_graph_def = tf.GraphDef()
-        with tf.gfile.GFile(graph_file, 'rb') as fid:
-            serialized_graph = fid.read()
-            od_graph_def.ParseFromString(serialized_graph)
-            tf.import_graph_def(od_graph_def, name='')
-    return graph
-
 # BEGIN TEST CODE
-def draw_boxes(image, boxes, classes, run_time, light_debug_index):
-    """Draw bounding boxes on the image"""
-    if not READ_TEST_IMAGE:
-        image = Image.fromarray(image)
-    draw = ImageDraw.Draw(image)
-    for i in range(len(boxes)):
-        bot, left, top, right = boxes[i, ...]
-        class_id = int(classes[i])
-        color = COLOR_LIST[class_id]
-        draw.line([(left, top), (left, bot), (right, bot), (right, top), (left, top)], width=4, fill=color)
+#def draw_boxes(image, boxes, classes, run_time, light_debug_index):
+    #"""Draw bounding boxes on the image"""
+    #if not READ_TEST_IMAGE:
+        #image = Image.fromarray(image)
+    #draw = ImageDraw.Draw(image)
+    #for i in range(len(boxes)):
+        #bot, left, top, right = boxes[i, ...]
+        #class_id = int(classes[i])
+        #color = COLOR_LIST[class_id]
+        #draw.line([(left, top), (left, bot), (right, bot), (right, top), (left, top)], width=4, fill=color)
 
 #    plt.figure(figsize=(12, 8))
 #    plt.imshow(image)
@@ -118,21 +61,21 @@ def draw_boxes(image, boxes, classes, run_time, light_debug_index):
 class TLClassifier(object):
     def __init__(self):
 
-        print ('######################       BEFORE Loaded Model')
+        if DEBUG_LEVEL >= 1:
+            print ('######################       BEFORE Loaded Model')
 #        self.model = load_model('AVO7_v1_model.h5')
 #        self.model = load_model('AVO4_model.h5')
         self.model = load_model('AVO7_v1_rebase_model.h5')
         self.model._make_predict_function()
         self.graph = tf.get_default_graph()
-        print ('######################       AFTER Loaded Model')
+        if DEBUG_LEVEL >= 1:
+            print ('######################       AFTER Loaded Model')
         self.DO_RED_ONCE = False
         self.DO_YELLOW_ONCE = False
         self.DO_GREEN_ONCE = False
 
-
-
         # BEGIN TEST CODE
-        plt.style.use('ggplot')
+        #plt.style.use('ggplot')
 
         # constants but you can change them so I guess they're not so constant :)
         INPUT_CHANNELS = 32
@@ -146,7 +89,7 @@ class TLClassifier(object):
             x = tf.constant(np.random.randn(1, IMG_HEIGHT, IMG_WIDTH, INPUT_CHANNELS), dtype=tf.float32)
 
             with tf.variable_scope('mobile'):
-                mobilenet_conv = mobilenet_conv_block(x, KERNEL_SIZE, OUTPUT_CHANNELS)
+                mobilenet_conv = self.mobilenet_conv_block(x, KERNEL_SIZE, OUTPUT_CHANNELS)
 
             mobile_params = [
                 (v.name, np.prod(v.get_shape().as_list()))
@@ -157,9 +100,9 @@ class TLClassifier(object):
         # Detection Initialization
 
         SSD_GRAPH_FILE = './ssd_frozen_inference_graph.pb'
-        RFCN_GRAPH_FILE = './rfcn_frozen_inference_graph.pb'
-        FASTER_RCNN_GRAPH_FILE = './faster_rcnn_frozen_inference_graph.pb'
-        self.detection_graph = load_graph(SSD_GRAPH_FILE)
+        #RFCN_GRAPH_FILE = './rfcn_frozen_inference_graph.pb'
+        #FASTER_RCNN_GRAPH_FILE = './faster_rcnn_frozen_inference_graph.pb'
+        self.detection_graph = self.load_graph(SSD_GRAPH_FILE)
 
         # The input placeholder for the image.
         # `get_tensor_by_name` returns the Tensor with the associated name in the Graph.
@@ -184,6 +127,7 @@ class TLClassifier(object):
         config = tf.ConfigProto()
         config.graph_options.optimizer_options.global_jit_level = tf.OptimizerOptions.ON_1
 
+        # Cache the detection session to avoid repeated initialization
         self.detection_session = tf.Session(graph=self.detection_graph, config=config)
 
         # Prime the detection pipeline to avoid long statup time
@@ -191,6 +135,63 @@ class TLClassifier(object):
         self.prime_image = True
         self.get_classification(image)
         self.prime_image = False
+
+    def mobilenet_conv_block(self, x, kernel_size, output_channels):
+        """
+        Depthwise Conv -> Batch Norm -> ReLU -> Pointwise Conv -> Batch Norm -> ReLU
+        """
+        # assumes BHWC format
+        input_channel_dim = x.get_shape().as_list()[-1]
+        W = tf.Variable(tf.truncated_normal((kernel_size, kernel_size, input_channel_dim, 1)))
+
+        # depthwise conv
+        x = tf.nn.depthwise_conv2d(x, W, (1, 2, 2, 1), padding='SAME')
+        x = tf.layers.batch_normalization(x, fused=True)
+        x = tf.nn.relu(x)
+
+        # pointwise conv
+        x = tf.layers.conv2d(x, output_channels, (1, 1), padding='SAME')
+        x = tf.layers.batch_normalization(x, fused=True)
+
+        return tf.nn.relu(x)
+
+    def filter_boxes(self, min_score, boxes, scores, classes):
+        """Return boxes with a confidence >= `min_score`"""
+        n = len(classes)
+        idxs = []
+        for i in range(n):
+            if scores[i] >= min_score:
+                idxs.append(i)
+
+        filtered_boxes = boxes[idxs, ...]
+        filtered_scores = scores[idxs, ...]
+        filtered_classes = classes[idxs, ...]
+        return filtered_boxes, filtered_scores, filtered_classes
+
+    def to_image_coords(self, boxes, height, width):
+        """
+        The original box coordinate output is normalized, i.e [0, 1].
+        This converts it back to the original coordinate based on the image
+        size.
+        """
+        box_coords = np.zeros_like(boxes)
+        box_coords[:, 0] = boxes[:, 0] * height
+        box_coords[:, 1] = boxes[:, 1] * width
+        box_coords[:, 2] = boxes[:, 2] * height
+        box_coords[:, 3] = boxes[:, 3] * width
+
+        return box_coords
+
+    def load_graph(self, graph_file):
+        """Loads a frozen inference graph"""
+        graph = tf.Graph()
+        with graph.as_default():
+            od_graph_def = tf.GraphDef()
+            with tf.gfile.GFile(graph_file, 'rb') as fid:
+                serialized_graph = fid.read()
+                od_graph_def.ParseFromString(serialized_graph)
+                tf.import_graph_def(od_graph_def, name='')
+        return graph
 
     def traffic_light_detection(self, image):
         """Detect a traffic light in the image and return it in a new cropped image
@@ -220,7 +221,7 @@ class TLClassifier(object):
 
         confidence_cutoff = 0.6
         # Filter boxes with a confidence score less than `confidence_cutoff`
-        boxes, scores, classes = filter_boxes(confidence_cutoff, boxes, scores, classes)
+        boxes, scores, classes = self.filter_boxes(confidence_cutoff, boxes, scores, classes)
 
         # If priming the detection pipeline don't need a tf light image
         if self.prime_image:
@@ -236,18 +237,18 @@ class TLClassifier(object):
         # END TEST CODE
             height, width, channels = image.shape
 
-        box_coords = to_image_coords(boxes, height, width)
+        box_coords = self.to_image_coords(boxes, height, width)
 
         for i in range(len(boxes)):
-            bot, left, top, right = box_coords[i, ...]
+            top, left, bot, right = box_coords[i, ...]
             class_id = int(classes[i])
             if class_id == 10:
-                light_image = image[int(bot):int(top), int(left):int(right)]
+                light_image = image[int(top):int(bot), int(left):int(right)]
                 if DEBUG_LEVEL >= 1:
                     sys.stdout.write("D,")
                     sys.stdout.flush()
                 if DEBUG_LEVEL >= 2:
-                    print("TL Classifier image", width, height, "light box", self.run_time, int(bot), int(top), int(left), int(right))
+                    print("TL Classifier image", width, height, "light box", self.run_time, int(top), int(bot), int(left), int(right))
                 if DEBUG_LEVEL >= 1:
                     if not READ_TEST_IMAGE and WRITE_CAMERA_IMAGE:
                         cv2.imwrite(self.run_time + "/camera_image" + str(self.light_debug_index) + ".jpg", image)

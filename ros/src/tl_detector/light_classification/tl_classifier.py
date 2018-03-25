@@ -314,7 +314,7 @@ class TLClassifier(object):
            if DEBUG_LEVEL >= 2:
                print ('predict_tl_state = ', predict_tl_state[0])
         if predict_tl_state == 0:
-           if DEBUG_LEVEL >= 2:
+           if DEBUG_LEVEL >= 1:
                sys.stdout.write("RED;")
                sys.stdout.flush()
                #print ('Traffic Light Color = RED ', predict_tl_state[0] )

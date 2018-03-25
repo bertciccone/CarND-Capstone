@@ -283,17 +283,24 @@ class TLClassifier(object):
 #        cv2.waitKey(0)
 #        cv2.destroyAllWindows()
 
+        if image is None:
+            return TrafficLight.UNKNOWN
+
         if DEBUG_LEVEL >= 2:
-            try:
-              print ('Image shape = ', image.shape)
-            except Exception as e:
+            if self.prime_image or READ_TEST_IMAGE:
+                width, height = image.size
+            else:
+                height, width, channels = image.shape
+            print ('Image shape = ', height, width)
+
+        #if DEBUG_LEVEL >= 2:
+            #try:
+              #print ('Image shape = ', image.shape)
+            #except Exception as e:
               #rospy.logwarn ('################No Image shape error'+ str(e))
               #image = image_org
               #print ('USE Image ORG ....   shape = ', image.shape)
-              return TrafficLight.UNKNOWN
-
-        if image is None:
-            return TrafficLight.UNKNOWN
+              #return TrafficLight.UNKNOWN
 
         image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
@@ -333,12 +340,8 @@ class TLClassifier(object):
              cv2.imwrite('green_image.jpg',image)
              self.DO_GREEN_ONCE = False
            return TrafficLight.GREEN
-        else:
+
+        if DEBUG_LEVEL >= 1:
            sys.stdout.write("UNKNOWN;")
            sys.stdout.flush()
-           return TrafficLight.UNKNOWN
-
-
-
-
         return TrafficLight.UNKNOWN

@@ -21,7 +21,7 @@ import cProfile
 IMAGE_SKIP_THRESHOLD = 50
 STATE_COUNT_THRESHOLD = 3
 
-DEBUG_LEVEL = 2  # 0 no Messages, 1 Important Stuff, 2 Everything
+DEBUG_LEVEL = 1  # 0 no Messages, 1 Important Stuff, 2 Everything
 USE_GROUND_TRUTH = False
 PRINT_STATS = False
 
@@ -232,7 +232,7 @@ class TLDetector(object):
 
         if(not self.has_image):
             self.prev_light_loc = None
-            return False
+            return TrafficLight.UNKNOWN
 
 ########################################################################
 #        self.camera_image.encoding = 'rgb8'

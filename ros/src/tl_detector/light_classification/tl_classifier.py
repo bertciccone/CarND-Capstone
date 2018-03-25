@@ -264,10 +264,6 @@ class TLClassifier(object):
 
         return light_image
 
-    def state_to_upper_char(self, state):
-        state_chars = {TrafficLight.RED: 'R', TrafficLight.YELLOW: 'Y', TrafficLight.GREEN: 'G', TrafficLight.UNKNOWN: 'U', }
-        return state_chars[state]
-
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
         Args:

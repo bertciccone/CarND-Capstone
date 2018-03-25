@@ -241,9 +241,6 @@ class TLClassifier(object):
         for i in range(len(boxes)):
             bot, left, top, right = box_coords[i, ...]
             class_id = int(classes[i])
-            if DEBUG_LEVEL >= 1:
-                sys.stdout.write("d,")
-                sys.stdout.flush()
             if class_id == 10:
                 light_image = image[int(bot):int(top), int(left):int(right)]
                 if DEBUG_LEVEL >= 1:

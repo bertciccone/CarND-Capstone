@@ -22,11 +22,11 @@ IMAGE_SKIP_THRESHOLD = 2
 #IMAGE_SKIP_THRESHOLD = 50
 #STATE_COUNT_THRESHOLD = 3
 #STATE_COUNT_THRESHOLD = 1
-STATE_COUNT_THRESHOLD = 2
+STATE_COUNT_THRESHOLD = 3
 
 TL_WP_SCALING = .5
 
-DEBUG_LEVEL = 2  # 0 no Messages, 1 Important Stuff, 2 Everything
+DEBUG_LEVEL = 1  # 0 no Messages, 1 Important Stuff, 2 Everything
 USE_GROUND_TRUTH = False
 #USE_GROUND_TRUTH = True
 PRINT_STATS = False
@@ -119,6 +119,8 @@ class TLDetector(object):
 
     def gt_state_to_lower_char(self):
         state_chars = {TrafficLight.RED: 'r', TrafficLight.YELLOW: 'y', TrafficLight.GREEN: 'g', TrafficLight.UNKNOWN: 'u', }
+        if self.lights[self.light].state not in state_chars:
+            return 'u'
         return state_chars[self.lights[self.light].state]
 
     def image_cb(self, msg):
@@ -130,11 +132,12 @@ class TLDetector(object):
         self.has_image = True
         self.camera_image = msg
 
+        if self.image_counter % IMAGE_SKIP_THRESHOLD:
+            # Skip image to account for image detection time
+            self.image_counter += 1
+            return self.state
+
         if DEBUG_LEVEL >= 1:
-            if self.image_counter % IMAGE_SKIP_THRESHOLD:
-                # Skip image to account for image detection time
-                self.image_counter += 1
-                return self.state
             # else, let's try to detect traffic light in image
             sys.stdout.write("tlwp")
             sys.stdout.write(str(self.light_wp_list[self.light]["wp"]))

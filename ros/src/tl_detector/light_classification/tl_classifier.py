@@ -181,10 +181,11 @@ class TLClassifier(object):
                 os.makedirs("./" + self.run_time)
 
         # Config to turn on JIT compilation
-        config = tf.ConfigProto()
-        config.graph_options.optimizer_options.global_jit_level = tf.OptimizerOptions.ON_1
+        #config = tf.ConfigProto()
+        #config.graph_options.optimizer_options.global_jit_level = tf.OptimizerOptions.ON_1
 
-        self.detection_session = tf.Session(graph=self.detection_graph, config=config)
+        #self.detection_session = tf.Session(graph=self.detection_graph, config=config)
+        self.detection_session = tf.Session(graph=self.detection_graph)
 
         # Prime the detection pipeline to avoid long statup time
         image = cv2.imread('./camera_image0.jpg')
@@ -200,6 +201,10 @@ class TLClassifier(object):
             imaged cropped to a box around the traffic light
         """
         light_image = None
+
+        if DEBUG_LEVEL >= 1:
+            sys.stdout.write("d,")
+            sys.stdout.flush()
 
         # BEGIN TEST CODE
         if READ_TEST_IMAGE:
@@ -241,9 +246,6 @@ class TLClassifier(object):
         for i in range(len(boxes)):
             bot, left, top, right = box_coords[i, ...]
             class_id = int(classes[i])
-            if DEBUG_LEVEL >= 1:
-                sys.stdout.write("d,")
-                sys.stdout.flush()
             if class_id == 10:
                 light_image = image[int(bot):int(top), int(left):int(right)]
                 if DEBUG_LEVEL >= 1:
@@ -314,7 +316,7 @@ class TLClassifier(object):
            if DEBUG_LEVEL >= 2:
                print ('predict_tl_state = ', predict_tl_state[0])
         if predict_tl_state == 0:
-           if DEBUG_LEVEL >= 2:
+           if DEBUG_LEVEL >= 1:
                sys.stdout.write("RED;")
                sys.stdout.flush()
                #print ('Traffic Light Color = RED ', predict_tl_state[0] )

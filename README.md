@@ -1,8 +1,49 @@
-This is the project repo for the final project of the Udacity Self-Driving Car Nanodegree: Programming a Real Self-Driving Car. For more information about the project, see the project introduction [here](https://classroom.udacity.com/nanodegrees/nd013/parts/6047fe34-d93c-4f50-8336-b70ef10cb4b2/modules/e1a23b06-329a-4684-a717-ad476f0d8dff/lessons/462c933d-9f24-42d3-8bdc-a08a5fc866e4/concepts/5ab4b122-83e6-436d-850f-9f4d26627fd9).
+# Self Driving Car Nanodegree Capstone Project
+
+## Team: Carla's Quest
+### Members:
+- Bert Ciccone
+- Johan Smet
+- Josef Steinbaeck
+- Albert Vo
+- Tobias Wagner
+
+The goals of this project are to:
+- Create a map waypoint updater, a twist controller and a traffic light detector/classifier in Python and ROS
+- To enable this software to drive a car in a Unity simulator in a lane on the highway, driving under the maximum speed limit and stopping at all traffic lights
+- To work as a team comprised of five members, each contributing development to the project and then integrating and testing the resulting system
+- Test the software using rosbag test data captured from a previous run of the software in a real self-driving car
+- To run the software in Udacity's test track
+- Finally, to review the captured rosbag and analyze it in ROS rviz
+
+### 1) Order of Development
+
+The team followed this order of development to build and test the components until the system was completed as a whole:
+- Waypoint Updater Node (Partial): We completed a partial waypoint updater which subscribes to /base_waypoints and /current_pose and publishes to /final_waypoints.
+- DBW Node: Once the waypoint updater was publishing /final_waypoints, the waypoint_follower node started publishing messages to the/twist_cmd topic. After completing this step, the car drove in the simulator, ignoring the traffic lights.
+- Detection/Classification: The detector detected the traffic light from the /image_color topic and a classifier determined its color. The topic /vehicle/traffic_lights contains the exact location and status of all traffic lights in simulator, so we used this ground truth to test our output.
+- Waypoint publishing: Once we correctly identified the traffic light and determined its position, we converted it to a waypoint index and published it.
+- Waypoint Updater (Full): We used /traffic_waypoint to change the waypoint target velocities before publishing to /final_waypoints. Our car now stops at red traffic lights and moves when they are green.
+
+### 2) Design Features of Each Component
+
+#### Waypoint Updater Node
+
+#### DBW Node
+
+#### Detection
+Single shot detection (SSD) is used to find the traffic light in the camera image and create the detection box around the light. This cropping of the camera image consisting of just the 3 lights in a traffic light was passed to a classifier to determine whether it is red, yellow or red. After classification, the detector looks for at least 3 detections of the same light color before publishing the change to the /traffic_waypoint topic.
+
+#### Classification
+
+#### Waypoint publishing
+
+#### Waypoint Updater
+
 
 Please use **one** of the two installation options, either native **or** docker installation.
 
-### Native Installation
+### 3) Native Installation
 
 * Be sure that your workstation is running Ubuntu 16.04 Xenial Xerus or Ubuntu 14.04 Trusty Tahir. [Ubuntu downloads can be found here](https://www.ubuntu.com/download/desktop).
 * If using a Virtual Machine to install Ubuntu, use the following configuration as minimum:
@@ -19,7 +60,7 @@ Please use **one** of the two installation options, either native **or** docker 
   * Use this option to install the SDK on a workstation that already has ROS installed: [One Line SDK Install (binary)](https://bitbucket.org/DataspeedInc/dbw_mkz_ros/src/81e63fcc335d7b64139d7482017d6a97b405e250/ROS_SETUP.md?fileviewer=file-view-default)
 * Download the [Udacity Simulator](https://github.com/udacity/CarND-Capstone/releases).
 
-### Docker Installation
+### 4) Docker Installation
 [Install Docker](https://docs.docker.com/engine/installation/)
 
 Build the docker container
@@ -32,10 +73,10 @@ Run the docker file
 docker run -p 4567:4567 -v $PWD:/capstone -v /tmp/log:/root/.ros/ --rm -it capstone
 ```
 
-### Port Forwarding
+### 5) Port Forwarding
 To set up port forwarding, please refer to the [instructions from term 2](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/16cf4a78-4fc7-49e1-8621-3450ca938b77)
 
-### Usage
+### 6) Usage
 
 1. Clone the project repository
 ```bash
@@ -56,7 +97,7 @@ roslaunch launch/styx.launch
 ```
 4. Run the simulator
 
-### Real world testing
+### 7) Real world testing
 1. Download [training bag](https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/traffic_light_bag_file.zip) that was recorded on the Udacity self-driving car.
 2. Unzip the file
 ```bash

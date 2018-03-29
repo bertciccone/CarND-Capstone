@@ -26,7 +26,7 @@ from keras.models import load_model
 from numpy import zeros, newaxis
 import rospy
 
-DEBUG_LEVEL = 1  # 0 no Messages, 1 Important Stuff, 2 Everything
+DEBUG_LEVEL = 0  # 0 no Messages, 1 Important Stuff, 2 Everything
 
 # Reference: Object Detection Lab Code
 
@@ -34,8 +34,8 @@ DEBUG_LEVEL = 1  # 0 no Messages, 1 Important Stuff, 2 Everything
 # Colors (one for each class)
 READ_TEST_IMAGE = False
 WRITE_BOXES_IMAGE = False
-WRITE_CAMERA_IMAGE = True
-WRITE_DETECTION_IMAGE = True
+WRITE_CAMERA_IMAGE = False
+WRITE_DETECTION_IMAGE = False
 #cmap = ImageColor.colormap
 #COLOR_LIST = sorted([c for c in cmap.keys()])
 # END TEST CODE
@@ -62,23 +62,23 @@ class TLClassifier(object):
         #plt.style.use('ggplot')
 
         # constants but you can change them so I guess they're not so constant :)
-        INPUT_CHANNELS = 32
-        OUTPUT_CHANNELS = 512
-        KERNEL_SIZE = 3
-        IMG_HEIGHT = 256
-        IMG_WIDTH = 256
+        #INPUT_CHANNELS = 32
+        #OUTPUT_CHANNELS = 512
+        #KERNEL_SIZE = 3
+        #IMG_HEIGHT = 256
+        #IMG_WIDTH = 256
 
-        with tf.Session(graph=tf.Graph()) as sess:
+        #with tf.Session(graph=tf.Graph()) as sess:
             # input
-            x = tf.constant(np.random.randn(1, IMG_HEIGHT, IMG_WIDTH, INPUT_CHANNELS), dtype=tf.float32)
+            #x = tf.constant(np.random.randn(1, IMG_HEIGHT, IMG_WIDTH, INPUT_CHANNELS), dtype=tf.float32)
 
-            with tf.variable_scope('mobile'):
-                mobilenet_conv = self.mobilenet_conv_block(x, KERNEL_SIZE, OUTPUT_CHANNELS)
+            #with tf.variable_scope('mobile'):
+                #mobilenet_conv = self.mobilenet_conv_block(x, KERNEL_SIZE, OUTPUT_CHANNELS)
 
-            mobile_params = [
-                (v.name, np.prod(v.get_shape().as_list()))
-                for v in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'mobile')
-            ]
+            #mobile_params = [
+                #(v.name, np.prod(v.get_shape().as_list()))
+                #for v in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'mobile')
+            #]
         # END TEST CODE
 
         # Detection Initialization

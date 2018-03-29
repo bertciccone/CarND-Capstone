@@ -26,7 +26,7 @@ STATE_COUNT_THRESHOLD = 3
 
 TL_WP_SCALING = .5
 
-DEBUG_LEVEL = 1  # 0 no Messages, 1 Important Stuff, 2 Everything
+DEBUG_LEVEL = 0  # 0 no Messages, 1 Important Stuff, 2 Everything
 USE_GROUND_TRUTH = False
 #USE_GROUND_TRUTH = True
 PRINT_STATS = False
@@ -198,7 +198,8 @@ class TLDetector(object):
 
         if self.kdtree is None:
             # Load tree for quick access to nearest waypoint
-            rospy.logwarn("TL Detector - Load waypoints into k-d tree")
+            if DEBUG_LEVEL >= 1:
+                rospy.logwarn("TL Detector - Load waypoints into k-d tree")
             wp_item_list = []
             for i, wp in enumerate(self.waypoints.waypoints):
                 x = wp.pose.pose.position.x

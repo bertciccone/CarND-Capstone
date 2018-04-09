@@ -26,7 +26,7 @@ STATE_COUNT_THRESHOLD = 3
 
 TL_WP_SCALING = .5
 
-DEBUG_LEVEL = 0  # 0 no Messages, 1 Important Stuff, 2 Everything
+DEBUG_LEVEL = 1  # 0 no Messages, 1 Important Stuff, 2 Everything
 USE_GROUND_TRUTH = False
 #USE_GROUND_TRUTH = True
 PRINT_STATS = False
@@ -162,7 +162,7 @@ class TLDetector(object):
         of times till we start using it. Otherwise the previous stable state is
         used.
         '''
-        if self.state != state:
+        if state != TrafficLight.UNKNOWN and self.state != state:
             self.state_count = 0
             self.state = state
             if DEBUG_LEVEL >= 1:

@@ -26,7 +26,7 @@ from keras.models import load_model
 from numpy import zeros, newaxis
 import rospy
 
-DEBUG_LEVEL = 0  # 0 no Messages, 1 Important Stuff, 2 Everything
+DEBUG_LEVEL = 1  # 0 no Messages, 1 Important Stuff, 2 Everything
 
 # Reference: Object Detection Lab Code
 
@@ -225,7 +225,7 @@ class TLClassifier(object):
         scores = np.squeeze(scores)
         classes = np.squeeze(classes)
 
-        confidence_cutoff = 0.6
+        confidence_cutoff = 0.4
         # Filter boxes with a confidence score less than `confidence_cutoff`
         boxes, scores, classes = self.filter_boxes(confidence_cutoff, boxes, scores, classes)
 

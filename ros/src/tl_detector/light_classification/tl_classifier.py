@@ -31,6 +31,7 @@ TL_TO_TEXT = {
 
 class TLClassifier(object):
     def __init__(self, env = 'sim'):
+        self.log_info('*** creating classifier for environment "{}"'.format(env))
         # load the detection model
         self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
@@ -103,8 +104,9 @@ class TLClassifier(object):
 
         lights = np.array(lights)
         with self.classifier_graph.as_default():
-            results = self.classifier_model.predict_on_batch(lights).sum(axis=0)
+            results = self.classifier_model.predict_on_batch(lights)
 
+        results = results.sum(axis=0)
         class_id = np.argmax(results[0:3])      # ignore unknown
 
         if (results[class_id] == 0):

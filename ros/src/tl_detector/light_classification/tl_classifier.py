@@ -126,6 +126,7 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
         ts_before = rospy.Time.now()
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         boxes, scores, classes = self.detect_traffic_lights(image)
         detected_class =  self.classify_detected_traffic_lights(image, boxes)
         ts_after = rospy.Time.now()

@@ -102,7 +102,7 @@ class TLClassifier(object):
             # extract light
             light = image[top:bottom, left:right]
             light = cv2.resize(light, (32, 64))  
-            skimage.io.imsave('./images/' + time.strftime("%H:%M:%S") + '{}'.format(self.imagecount) + '.jpg', light)
+            #skimage.io.imsave('./images/' + time.strftime("%H:%M:%S") + '{}'.format(self.imagecount) + '.jpg', light)
 	    light = light / 255.0
 	    lights.append(light)
 

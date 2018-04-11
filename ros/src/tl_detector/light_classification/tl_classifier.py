@@ -4,9 +4,12 @@ import numpy as np
 import tensorflow as tf
 from keras.models import load_model
 from keras import backend as K
+import skimage.io
 import cv2
 
 import rospy
+
+import time
 
 DETECTION_MODEL="models/ssd_inception_{}.pb"
 CLASSIFY_MODEL="models/classifier_{}.h5"
@@ -33,7 +36,8 @@ class TLClassifier(object):
     def __init__(self, env = 'sim'):
         self.log_info('*** creating classifier for environment "{}"'.format(env))
         # load the detection model
-        self.detection_graph = tf.Graph()
+	self.imagecount = 0        
+	self.detection_graph = tf.Graph()
         with self.detection_graph.as_default():
             od_graph_def = tf.GraphDef()
             with tf.gfile.GFile(DETECTION_MODEL.format(env), 'rb') as fid:
@@ -88,8 +92,7 @@ class TLClassifier(object):
             return TrafficLight.UNKNOWN
 
         lights = []
-
-        for i in range(len(boxes)):
+	for i in range(len(boxes)):
             # convert to image coordinates
             top, left, bottom, right = int(boxes[i][0] * image.shape[0]), \
                                        int(boxes[i][1] * image.shape[1]), \
@@ -98,9 +101,12 @@ class TLClassifier(object):
         
             # extract light
             light = image[top:bottom, left:right]
-            light = cv2.resize(light, (32, 64))
-            light = light / 255.0
-            lights.append(light)
+            light = cv2.resize(light, (32, 64))  
+            skimage.io.imsave('./images/' + time.strftime("%H:%M:%S") + '{}'.format(self.imagecount) + '.jpg', light)
+	    light = light / 255.0
+	    lights.append(light)
+
+	    self.imagecount += 1
 
         lights = np.array(lights)
         with self.classifier_graph.as_default():

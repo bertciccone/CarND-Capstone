@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from keras.models import load_model
 from keras import backend as K
-import skimage.io
+#import skimage.io
 import cv2
 
 import rospy

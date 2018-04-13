@@ -39,39 +39,17 @@ The twist-controller node uses the output of the waypoint-updater node to send c
 
 #### Traffic Light Detection/Classification
 
-The traffic light detector uses a pre-trained SSD Mobilenet model to do object detection.  When the detector finds a traffic light, the detector feeds just the image of the traffic light to the classifier.  The classifier is a CNN that consists of the following layers:
+The traffic light detector uses a pre-trained SSD Inception model to do object detection.  When the detector finds a traffic light, the detector feeds just the image of the traffic light to the classifier.
 
-Layer (type)                 Output Shape              Param #  
+We trained two separate detection models using Red, Yellow and Green traffic light images captured from two separate image sources: the Unity simulator and the real live test parking lot. In inference mode while driving, the code selects the correct model trained with the training data set corresponding to the run environment.
 
-conv2d_1 (Conv2D)            (None, 32, 32, 32)        896      
-activation_1 (Activation)    (None, 32, 32, 32)        0        
-conv2d_2 (Conv2D)            (None, 30, 30, 32)        9248      
-activation_2 (Activation)    (None, 30, 30, 32)        0        
-max_pooling2d_1 (MaxPooling2 (None, 15, 15, 32)        0        
-dropout_1 (Dropout)          (None, 15, 15, 32)        0        
-conv2d_3 (Conv2D)            (None, 15, 15, 64)        18496    
-activation_3 (Activation)    (None, 15, 15, 64)        0        
-conv2d_4 (Conv2D)            (None, 13, 13, 64)        36928    
-activation_4 (Activation)    (None, 13, 13, 64)        0        
-max_pooling2d_2 (MaxPooling2 (None, 6, 6, 64)          0        
-dropout_2 (Dropout)          (None, 6, 6, 64)          0        
-flatten_1 (Flatten)          (None, 2304)              0        
-dense_1 (Dense)              (None, 512)               1180160  
-activation_5 (Activation)    (None, 512)               0        
-dropout_3 (Dropout)          (None, 512)               0        
-dense_2 (Dense)              (None, 3)                 1539      
-activation_6 (Activation)    (None, 3)                 0        
+The classifier loads the trained model weights, subscribes to the camera topic and performs inference and classification of traffic lights based on the camera images.
 
-Total params: 1,247,267
-Trainable params: 1,247,267
-Non-trainable params: 0
-
-We trained the classifier model using Red, Yellow and Green traffic light images captured from the simulator's vehicle camera.
-The classifier loads the trained model weights, subscribes to the camera topic and performs inference and classification of traffic lights based on the raw images.
+### INSTALLATION
 
 Please use **one** of the two installation options, either native **or** docker installation.
 
-### 3) Native Installation
+### 1) Native Installation
 
 * Be sure that your workstation is running Ubuntu 16.04 Xenial Xerus or Ubuntu 14.04 Trusty Tahir. [Ubuntu downloads can be found here](https://www.ubuntu.com/download/desktop).
 * If using a Virtual Machine to install Ubuntu, use the following configuration as minimum:
@@ -101,10 +79,10 @@ Run the docker file
 docker run -p 4567:4567 -v $PWD:/capstone -v /tmp/log:/root/.ros/ --rm -it capstone
 ```
 
-### 5) Port Forwarding
+### 2) Port Forwarding
 To set up port forwarding, please refer to the [instructions from term 2](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/16cf4a78-4fc7-49e1-8621-3450ca938b77)
 
-### 6) Usage
+### 3) Usage
 
 1. Clone the project repository
 ```bash

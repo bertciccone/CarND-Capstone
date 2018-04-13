@@ -45,7 +45,6 @@ class TLDetector(object):
         self.light_wp_list = None
         self.image_counter = 0
         self.ground_truth = None
-        self.light_classifier = TLClassifier()
         self.listener = tf.TransformListener()
 
         self.state = TrafficLight.UNKNOWN
@@ -65,7 +64,7 @@ class TLDetector(object):
         rely on the position of the light and the camera image to predict it.
         '''
         sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
-        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
+        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb, queue_size=1,buff_size=4*2048*2048)
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
@@ -76,6 +75,8 @@ class TLDetector(object):
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
 
         self.bridge = CvBridge()
+
+        self.light_classifier = TLClassifier(self.config['env'])
 
         rospy.spin()
 
@@ -134,7 +135,7 @@ class TLDetector(object):
 
         if self.image_counter % IMAGE_SKIP_THRESHOLD:
             # Skip image to account for image detection time
-            self.image_counter += 1
+	    self.image_counter += 1
             return self.state
 
         if DEBUG_LEVEL >= 1:
@@ -162,7 +163,7 @@ class TLDetector(object):
         of times till we start using it. Otherwise the previous stable state is
         used.
         '''
-        if self.state != state:
+        if state != TrafficLight.UNKNOWN and self.state != state:
             self.state_count = 0
             self.state = state
             if DEBUG_LEVEL >= 1:

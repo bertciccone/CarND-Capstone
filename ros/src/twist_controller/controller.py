@@ -41,6 +41,7 @@ class Controller(object):
         self.wheel_radius = kwargs['wheel_radius']
         self.brake_deadband = kwargs['brake_deadband']
         self.last_t = None
+        self.last_throttle = None
 
     def update_throttle_gains(self, Kp, Ki, Kd):
         self.pid_throttle.set_gains(Kp, Ki, Kd)
@@ -55,6 +56,7 @@ class Controller(object):
         # early out when dbw is not enabled
         if not self.dbw_enabled or self.last_t is None:
             self.last_t = cur_t
+            self.last_throttle = 0
             return 0.0, 0.0, 0.0
 
         # time delta for sample
@@ -66,6 +68,12 @@ class Controller(object):
 
         # control velocity
         throttle, brake = self.control_velocity(delta_t, req_vel_linear, cur_vel_linear)
+
+        # limit rate of throttle change to avoid jerky start
+        max_throttle = self.last_throttle + delta_t * 0.20
+        if throttle > max_throttle:
+            throttle = max_throttle
+        self.last_throttle = throttle
 
         # return throttle, brake, steer
         return throttle, brake, steer

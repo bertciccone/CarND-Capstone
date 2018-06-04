@@ -18,7 +18,7 @@ import sys
 # Import the Python profiling package for performance timing
 import cProfile
 
-IMAGE_SKIP_THRESHOLD = 2
+#IMAGE_SKIP_THRESHOLD = 2
 #IMAGE_SKIP_THRESHOLD = 50
 #STATE_COUNT_THRESHOLD = 3
 #STATE_COUNT_THRESHOLD = 1
@@ -133,10 +133,10 @@ class TLDetector(object):
         self.has_image = True
         self.camera_image = msg
 
-        if self.image_counter % IMAGE_SKIP_THRESHOLD:
+        #if self.image_counter % IMAGE_SKIP_THRESHOLD:
             # Skip image to account for image detection time
-	    self.image_counter += 1
-            return self.state
+	    #self.image_counter += 1
+            #return self.state
 
         if DEBUG_LEVEL >= 1:
             # else, let's try to detect traffic light in image

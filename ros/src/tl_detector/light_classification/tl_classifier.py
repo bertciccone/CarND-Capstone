@@ -14,7 +14,7 @@ import time
 DETECTION_MODEL="models/ssd_inception_{}.pb"
 CLASSIFY_MODEL="models/classifier_{}.h5"
 
-DETECTION_MIN_SCORE = 0.70
+DETECTION_MIN_SCORE = 0.50
 
 DEBUG_OUTPUT = 1        # 0: No output 1: important message 2:all
 
